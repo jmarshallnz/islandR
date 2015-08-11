@@ -28,7 +28,7 @@ all <- do.call(rbind, all)
 # transform
 attr_cols <- names(all) %in% paste0("Source",0:3)
 all[,attr_cols] <- exp(all[,attr_cols])
-all[,attr_cols] <- all[,attr_cols] / rowSums(all[,attr_cols])
+all[,attr_cols] <- all[,attr_cols] / colSums(all[,attr_cols])
 
 # reorder + rename
 all <- all %>% select(ST, everything()) %>% rename(ASP=Loci0, GLN=Loci1, GLT=Loci2,
