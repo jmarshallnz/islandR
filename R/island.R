@@ -26,6 +26,37 @@ inverse_logit = function(logit_p) {
   pn / sum(pn)
 }
 
+update_priors = function(curr) {
+  # hyper-priors
+  alpha_mu   = 0
+  alpha_prec = 0.1
+  tau_shape  = 0.1
+  tau_rate   = 0.1
+
+  # first, our means
+  for (i in 1:ncol(curr$logit_p)) {
+    # posterior will be alpha_mu*alpha_prec + n * tau * mean(p) / alpha_prec + n * tau
+    mu_hat = mean(curr$logit_p[,i])
+    n      = nrow(curr$logit_p)
+    prec = alpha_prec + n * curr$tau
+    mu   = (alpha_mu*alpha_prec + n*mu_hat*curr$tau) / prec
+    curr$mu[i] = rnorm(1, mu, 1/sqrt(prec))
+  }
+
+  # update TAU
+  # posterior will be (tau_shape + n/2, tau_rate + sum(p - mu)^2/2)
+  rss = 0;
+  for (i in 1:ncol(curr$logit_p))
+    rss = rss + sum((curr$logit_p[,i] - curr$mu[i])^2)
+
+  n     = nrow(curr$logit_p) * ncol(curr$logit_p)
+  shape = tau_shape + n / 2
+  rate  = tau_rate  + rss / 2
+  curr$tau   = rgamma(1, shape, rate=rate)
+
+  curr
+}
+
 update_p = function(curr, humans, phi) {
 
   # proposal distribution
@@ -51,9 +82,11 @@ update_p = function(curr, humans, phi) {
       # compute prior-hastings ratio
       # Prior-Hastings ratio = Proposal(f,f')/Proposal(f',f) * Prior(f')/Prior(f)
       # Proposal is normal distribution so is symmetric, so this drops down to the prior.
-      # Prior ratio exp((p^2-p'^2)/(2*sigma^2))
-      #
-      log_hastings_ratio = (curr$logit_p[x,id]^2-logit_p[id]^2)/(2*logit_p_proposal_sigma);
+
+      # Prior in our hierarchical model is determined by mu + tau
+      # exp(((p-mu)^2-(p'-mu)^2)/2*tau)
+      log_hastings_ratio = ((curr$logit_p[x,id] - curr$mu[id])^2 -
+                            (logit_p[id] - curr$mu[id])^2)*0.5*curr$tau;
 
       # compute likelihood ratio
       log_likelihood = log_lik(h, phi, p)
@@ -98,6 +131,8 @@ mcmc = function(humans, phi) {
 
   #' sample logit_p from the prior
   logit_p = matrix(rnorm(n_times * (n_sources-1), 0, logit_p_sigma), n_times)
+  mu      = rep(0, n_sources - 1)
+  tau     = 1
 
   #' compute log-likelihood for each covariate pattern
   log_likelihood = numeric(n_times)
@@ -107,11 +142,14 @@ mcmc = function(humans, phi) {
   }
 
   # storage for the current iteration
-  curr = list(logit_p = logit_p, log_likelihood = log_likelihood, accept=0, reject=0)
+  curr = list(logit_p = logit_p, mu = mu, tau = tau, log_likelihood = log_likelihood, accept=0, reject=0)
 
   # main MCMC loop
   post_i = 0;
   for (i in seq_len(iterations+burnin)) {
+
+    # update priors
+    curr = update_priors(curr)
 
     # update the p's
     curr = update_p(curr, humans, phi)
@@ -122,7 +160,9 @@ mcmc = function(humans, phi) {
     }
     if (i > burnin && i %% thinning == 0) {
       post_i = post_i + 1;
-      posterior_logit_p[[post_i]] = curr$logit_p
+      posterior_logit_p[[post_i]] = list(logit_p = curr$logit_p,
+                                         mu      = curr$mu,
+                                         tau     = curr$tau)
     }
   }
 
