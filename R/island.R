@@ -3,7 +3,7 @@
 #' Eventually this will include AR1() model
 
 #' Log-likelihood function
-log_lik = function(humans, phi, p) {
+log_lik_R = function(humans, phi, p) {
   loglik = 0
   # run through human isolates
 
