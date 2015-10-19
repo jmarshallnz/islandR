@@ -22,7 +22,7 @@ data <- data.frame(file=files, iteration, chain)
 # grab out the data for these chains
 # refer paragraph in Tracing the Source of Campylobacteriosis p.6:"
 # taking each non-human group in turn, half the isolates were removed
-# leaving the other half in the pool and the number of genotypes 
+# leaving the other half in the pool and the number of genotypes
 # unique to the removed isolates was calculated. A set of human
 # isolates was drawn of equal number, and the number of unique geno-
 # types calculated relative to the same pool"
@@ -49,11 +49,6 @@ attr_cols <- names(all) %in% paste0("Source",0:3)
 
 all[,attr_cols] <- exp(all[,attr_cols])
 
-# modified from rowSums to colSums in order to fix p(j|i) to p(i|j)
-# where j represents source and i denotes ST
-
-all[,attr_cols] <- all[,attr_cols] / colSums(all[,attr_cols])
-
 # reorder + rename
 all <- all %>% select(ST, everything()) %>% rename(ASP=Loci0, GLN=Loci1, GLT=Loci2,
                                                    GLY=Loci3, PGM=Loci4, TKT=Loci5,
@@ -61,7 +56,7 @@ all <- all %>% select(ST, everything()) %>% rename(ASP=Loci0, GLN=Loci1, GLT=Loc
                                                    Water=Source2, Other=Source3)
 
 # Iteration has to be calculated as the files are combined into a
-# single chain! (by interleaving) 
+# single chain! (by interleaving)
 all$Iteration <- (as.numeric(as.factor(all$Iteration))-1) * length(unique(all$Chain)) + as.numeric(as.factor(all$Chain))
 
 genotype_attribution <- all %>% select(-Chain)
