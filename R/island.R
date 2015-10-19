@@ -102,8 +102,7 @@ update_p = function(curr, humans, phi) {
     log_hastings_ratio = ((curr$p[i] - mu[i])^2 - (p[i] - mu[i])^2)*0.5*curr$tau;
 
     # compute likelihood ratio
-    p_new = p[curr$t == t]
-    log_likelihood = log_lik(h, phi, inverse_logit(p_new))
+    log_likelihood = log_lik(h, phi, p[curr$t == t])
     log_likelihood_ratio = log_likelihood - curr$log_likelihood[t]
 
     # accept/reject
@@ -160,7 +159,7 @@ mcmc = function(humans, phi) {
   #' compute log-likelihood for each covariate pattern
   log_likelihood = numeric(n_times)
   for (x in 1:n_times) {
-    log_likelihood[x] = log_lik(humans[[x]], phi, inverse_logit(p[t == x]))
+    log_likelihood[x] = log_lik(humans[[x]], phi, p[t == x])
   }
 
   # storage for the current iteration
