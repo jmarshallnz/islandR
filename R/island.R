@@ -31,9 +31,28 @@ update_priors = function(curr) {
   # hyper-priors
   theta_0    = rep(0, length(curr$theta))
   theta_prec = diag(0.1, length(curr$theta))
-  tau_shape  = 0.1
-  tau_rate   = 0.1
+  tau_shape  = 1 #0.1
+  tau_rate   = 10 #0.1
+  rho_0      = 0
+  rho_prec   = 9
 
+  # 1. Transform to eliminate the auto-correlation
+  #
+  # p_star = rho(L)p
+  # X_star = rho(L)X
+  #
+  # TODO: Generalise this. In the case of clustered data
+  #       we want to keep everything within their cluster
+  #       ATM this is enforced due to order (boo, hiss!)
+  #
+  #       In addition, there's an explicit assumption here
+  #       that the number of observations is constant (it
+  #       should be when we setup the design matrix though)
+  t1 = curr$t != 1
+  t2 = curr$t != max(curr$t)
+  p = curr$p[t1]  - curr$rho*curr$p[t2]
+  X = curr$X[t1,] - curr$rho*curr$X[t2,]
+  #
   # 1. Sample theta
   #
   # prior theta ~ Normal(theta_0, theta_prec)
@@ -49,8 +68,8 @@ update_priors = function(curr) {
   # prec_hat = theta_prec + tau X'X
   # theta_hat = prec_hat^{-1} (theta_prec*theta_0 + tau X'y)
 
-  var_hat   = solve(theta_prec + curr$tau * t(curr$X) %*% curr$X)
-  theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(curr$X) %*% curr$p)
+  var_hat   = solve(theta_prec + curr$tau * t(X) %*% X)
+  theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(X) %*% p)
 
   curr$theta = mvrnorm(1, theta_hat, var_hat)
 
@@ -59,12 +78,35 @@ update_priors = function(curr) {
   # prior tau ~ Gamma(tau_shape, tau_rate)
   #
   # posterior will be (tau_shape + n/2, tau_rate + (p - X theta)'(p - X theta)/2)
-  rss = sum((curr$p - curr$X %*% curr$theta)^2)
 
-  n     = length(curr$p)
+  e = p - X %*% curr$theta
+  rss = sum(e^2)
+
+  n     = length(p)
   shape = tau_shape + n / 2
   rate  = tau_rate  + rss / 2
   curr$tau   = rgamma(1, shape, rate=rate)
+
+  # 3. Sample phi
+  #
+  # Prior is TN(rho_0, rho_prec)
+  #
+  # Given y, tau, theta, the error e_t = p_t - x_t theta becomes degenerate. Thus
+  #
+  # e_t = rho e_{t-1} + eta_t
+  #
+  # so the posterior is a truncated normal
+
+  e   = curr$p - curr$X %*% curr$theta
+  E   = e[t2]
+  eps = e[t1]
+
+  var = 1 / (rho_prec + curr$tau * sum(E^2))
+  mu  = var * (rho_prec * rho_0 + curr$tau * sum(E*eps))
+
+  rho = rnorm(1, mu, sqrt(var))
+  if (rho < 1 && rho > -1)
+    curr$rho = rho
 
   curr
 }
@@ -74,35 +116,84 @@ update_p = function(curr, humans, phi) {
   # proposal distribution
   p_proposal_sigma = 1
 
-  # first up, compute the fitted values
+  # first up, compute the fitted values and residuals
   mu = curr$X %*% curr$theta
 
-  # TODO: Could do this at random instead
-  # for each covariate patterns
-  for (i in 1:length(curr$p)) {
+  n_times = max(curr$t)
 
-    # we can optimise this quite a bit, as we need only update
-    # the log likelihood corresponding to this covariate pattern
-    # as every other param is staying the same
+  # for each covariate pattern (sampled at random)
+  # TODO: if we decide to block update, we'd need to change this
+  s = sample(length(curr$p))
+  for (i in s) {
 
-    # find the covariate pattern corresponding to this observation
-    t = curr$t[i]
-    h = humans[[t]]
+    # note that the likelihood only changes for the particular
+    # covariate pattern, so we needn't compute the entire thing
 
     # update the corresponding p
-    p     = curr$p
-    p[i]  = rnorm(1, curr$p[i], p_proposal_sigma);
 
-    # compute prior-hastings ratio
-    # Prior-Hastings ratio = Proposal(f,f')/Proposal(f',f) * Prior(f')/Prior(f)
-    # Proposal is normal distribution so is symmetric, so this drops down to the prior.
+    # The below assumes we're proposing from the conditional prior
+    #
+    # Thus the prior-hastings ratio is 1.
+    #
+    # The conditional prior is
+    #
+    # e[t] ~ rho*e[t-1] + Normal(0, tau)
+    #
+    # which can be rewritten in various forms. We could potentially
+    # block sample using this technique.
+    #
+    # we assume throughout that the arrangement of the data are such
+    # that the previous and/or next time point for this covariate
+    # pattern is the next or previous observation respectively
 
-    # Prior in our hierarchical model is determined by mu + tau
-    # exp(((p-mu)^2-(p'-mu)^2)/2*tau)
-    log_hastings_ratio = ((curr$p[i] - mu[i])^2 - (p[i] - mu[i])^2)*0.5*curr$tau;
+    p = curr$p
+
+    t = curr$t[i]
+    if (t == 1) {
+      # rearranging to find the conditional prior on e[1] gives
+      #
+      #  e[1] ~ Normal(1/rho*e[2], tau/rho^2)
+      #
+      # is what you'd think. However, it turns out (mysteriously)
+      # that it is actually
+      #
+      #  e[1] ~ Normal(rho*e[2], tau)
+      #
+      # TODO: not exactly sure why though??? Google backcasting?
+      #
+      # as we're proposing from the prior, the hastings ratio is 1
+      #
+      # however, if rho is close to 0, we want to sample independently
+      p[i] = rnorm(1, mu[i] + (curr$p[i+1] - mu[i+1])*curr$rho, 1/sqrt(curr$tau))
+    } else if (t == n_times) {
+      #  e[t] ~ Normal(rho*e[t-1], tau)
+      p[i] = rnorm(1, mu[i] + (curr$p[i-1] - mu[i-1])*curr$rho, 1/sqrt(curr$tau))
+    } else {
+      # Here we're proposing from the prior. This means proposal is prior
+      # so hastings ratio is 1.
+
+      # Alternate is to propose from some other symmetric distribution, so
+      # hastings ratio is prior ratio.
+
+      # We can use the above and below to get a better proposal conditioned
+      # on all the other values.
+      #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
+      #   1/rho(p[t+1] - mu[t+1]) - (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
+
+      #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
+      #   -1/rho(p[t+1] - mu[t+1]) + (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
+      #
+      #   p[t] - mu[t] - rho/2*(p[t-1] - mu[t-1]) - 1/rho/2*(p[t+1] - mu[t+1]) ~ Normal(0, tau*(1 + 1/rho^2) / 4)
+
+      # BUT: Mysteriously, the backcasting suggests this is not the case???
+      #     Again, google backcasting AR(1) processes
+      # f[t] ~ Normal(mu + rho*(f[t-1] + f[t+1] - 2*mu)/2, tau*2)
+      p[i] = rnorm(1, mu[i] + 0.5*(p[i-1] - mu[i-1])*curr$rho + 0.5*(p[i+1] - mu[i+1])*curr$rho, 1/(2*sqrt(curr$tau)))
+    }
+    log_hastings_ratio = 0;
 
     # compute likelihood ratio
-    log_likelihood = log_lik(h, phi, p[curr$t == t])
+    log_likelihood = log_lik(humans[[t]], phi, p[curr$t == t])
     log_likelihood_ratio = log_likelihood - curr$log_likelihood[t]
 
     # accept/reject
@@ -119,10 +210,9 @@ update_p = function(curr, humans, phi) {
   return(curr)
 }
 
-mcmc = function(humans, phi) {
+mcmc = function(humans, phi, iterations = 10000) {
 
   #' MCMC parameters
-  iterations = 10000
   burnin     = 1000
   thinning   = 100
 
@@ -153,8 +243,9 @@ mcmc = function(humans, phi) {
   #' parameter vector
   theta   = rep(0, n_sources - 1)
 
-  #' precision
+  #' precision, auto-correlation
   tau     = 1
+  rho     = 0
 
   #' compute log-likelihood for each covariate pattern
   log_likelihood = numeric(n_times)
@@ -163,7 +254,7 @@ mcmc = function(humans, phi) {
   }
 
   # storage for the current iteration
-  curr = list(p = p, X = X, t = t, theta = theta, tau = tau, log_likelihood = log_likelihood, accept=0, reject=0)
+  curr = list(p = p, X = X, t = t, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
 
   # main MCMC loop
   post_i = 0;
@@ -183,9 +274,10 @@ mcmc = function(humans, phi) {
       post_i = post_i + 1;
       posterior[[post_i]] = list(p     = curr$p,
                                  theta = curr$theta,
-                                 tau   = curr$tau)
+                                 tau   = curr$tau,
+                                 rho   = curr$rho)
     }
   }
 
-  list(post = posterior, ar = curr$accept / (curr$accept + curr$reject))
+  list(post = posterior, ar = c(curr$accept, curr$reject))
 }
