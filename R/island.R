@@ -193,15 +193,16 @@ update_p = function(curr, humans, phi) {
     log_hastings_ratio = 0;
 
     # compute likelihood ratio
-    log_likelihood = log_lik(humans[[t]], phi, p[curr$t == t])
-    log_likelihood_ratio = log_likelihood - curr$log_likelihood[t]
+    cov = curr$cov[i] # current covariate pattern
+    log_likelihood = log_lik(humans[[cov]], phi, p[curr$cov == cov])
+    log_likelihood_ratio = log_likelihood - curr$log_likelihood[cov]
 
     # accept/reject
     log_alpha = log_likelihood_ratio + log_hastings_ratio
     if (log_alpha > 0 || runif(1) < exp(log_alpha)) {
       # accept new values, copy to old
       curr$p[i] = p[i]
-      curr$log_likelihood[t] = log_likelihood
+      curr$log_likelihood[cov] = log_likelihood
       curr$accept = curr$accept + 1
     } else {
       curr$reject = curr$reject + 1
@@ -223,38 +224,46 @@ mcmc = function(humans, phi, iterations = 10000) {
   accept_reject = numeric(2)
 
   n_sources = ncol(phi)
-  n_times   = length(humans)
+  n_times   = 40        # TODO: Need to pass this in
 
   # posterior
   posterior = list()
 
-  #' sample p from the prior
-  p = rnorm(n_times * (n_sources-1), 0, logit_p_sigma)
+  # TODO: Need to pass Loc in
+  x0 = expand.grid(Time = 1:n_times, Loc = 0:1, Source = 1:(n_sources-1))
+
+  #' unique covariate patterns (TODO: Need to pass this in)
+  cov = rep(1:80,3)
 
   #' time column (in case time is important)
-  t = rep(1:n_times, 3)
+  t = x0$Time
 
   #' design matrix
-  X = matrix(0, n_times * (n_sources-1), n_sources-1)
-  X[            1:n_times, 1] = 1
-  X[  n_times + 1:n_times, 2] = 1
-  X[2*n_times + 1:n_times, 3] = 1
+  X = model.matrix(~ -1 + as.factor(Source)/as.factor(Loc), data=x0)
+  colnames(X) = NULL
+
+  X = matrix(0, 240, 6)
+  for (i in 1:6)
+    X[1:40 + (i-1)*40,i] = 1
 
   #' parameter vector
-  theta   = rep(0, n_sources - 1)
+  theta   = rep(0, ncol(X))
 
   #' precision, auto-correlation
   tau     = 1
   rho     = 0
 
+  #' initialise p
+  p = numeric(nrow(X))
+
   #' compute log-likelihood for each covariate pattern
-  log_likelihood = numeric(n_times)
-  for (x in 1:n_times) {
-    log_likelihood[x] = log_lik(humans[[x]], phi, p[t == x])
+  log_likelihood = numeric(length(humans))
+  for (x in seq_along(humans)) {
+    log_likelihood[x] = log_lik(humans[[x]], phi, p[cov == x])
   }
 
   # storage for the current iteration
-  curr = list(p = p, X = X, t = t, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
+  curr = list(p = p, X = X, t = t, cov = cov, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
 
   # main MCMC loop
   post_i = 0;
