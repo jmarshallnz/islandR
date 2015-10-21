@@ -34,7 +34,7 @@ update_priors = function(curr) {
   tau_shape  = 1 #0.1
   tau_rate   = 10 #0.1
   rho_0      = 0
-  rho_prec   = 9
+  rho_prec   = 16
 
   # 1. Transform to eliminate the auto-correlation
   #
