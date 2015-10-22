@@ -243,22 +243,21 @@ mcmc = function(humans, phi, iterations = 10000) {
   posterior = list()
 
   # TODO: Need to pass Loc in
-  x0 = expand.grid(Time = 1:n_times, Loc = 0:1, Source = 1:(n_sources-1))
+  x0 = expand.grid(Time = 1:n_times, Loc = 0:1)
+
+  x0$Season = as.factor((x0$Time - 1) %% 4 + 1)
+  x0$Intervention = as.factor(ifelse(x0$Time > 12, 1, 0))
+  x0$Loc = as.factor(x0$Loc)
 
   #' time column (in case time is important)
   t = rep(1:n_times, 2)
 
   #' design matrix
-  X = model.matrix(~ -1 + as.factor(Source)/as.factor(Loc), data=x0)
-  colnames(X) = NULL
-
-  # model matrix is repeated for each source (as model is nested within source)
-  X = matrix(0, 80, 2)
-  for (i in 1:2)
-    X[1:40 + (i-1)*40,i] = 1
+  X = model.matrix(~ Season*Intervention*Loc, data=x0)
 
   #' parameter vector
   theta   = matrix(0, ncol(X), n_sources-1)
+  rownames(theta) <- colnames(X)
 
   #' precision, auto-correlation
   tau     = 1
