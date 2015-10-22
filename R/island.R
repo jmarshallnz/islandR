@@ -29,8 +29,8 @@ inverse_logit = function(logit_p) {
 
 update_priors = function(curr) {
   # hyper-priors
-  theta_0    = rep(0, length(curr$theta))
-  theta_prec = diag(0.1, length(curr$theta))
+  theta_0    = matrix(0, nrow(curr$theta), ncol(curr$theta))
+  theta_prec = diag(0.1, nrow(curr$theta)) # same prior across all sources
   tau_shape  = 1 #0.1
   tau_rate   = 10 #0.1
   rho_0      = 0
@@ -50,8 +50,9 @@ update_priors = function(curr) {
   #       should be when we setup the design matrix though)
   t1 = curr$t != 1
   t2 = curr$t != max(curr$t)
-  p = curr$p[t1]  - curr$rho*curr$p[t2]
+  p = curr$p[t1,] - curr$rho*curr$p[t2,]
   X = curr$X[t1,] - curr$rho*curr$X[t2,]
+
   #
   # 1. Sample theta
   #
@@ -71,7 +72,10 @@ update_priors = function(curr) {
   var_hat   = solve(theta_prec + curr$tau * t(X) %*% X)
   theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(X) %*% p)
 
-  curr$theta = mvrnorm(1, theta_hat, var_hat)
+  # now, to do the sampling we need to iterate over the columns of theta_hat
+  # as it is a matrix
+  for (j in 1:ncol(curr$theta))
+    curr$theta[,j] = mvrnorm(1, theta_hat[,j], var_hat)
 
   # 2. Sample tau
   #
@@ -98,8 +102,8 @@ update_priors = function(curr) {
   # so the posterior is a truncated normal
 
   e   = curr$p - curr$X %*% curr$theta
-  E   = e[t2]
-  eps = e[t1]
+  E   = e[t2,]
+  eps = e[t1,]
 
   var = 1 / (rho_prec + curr$tau * sum(E^2))
   mu  = var * (rho_prec * rho_0 + curr$tau * sum(E*eps))
@@ -123,8 +127,11 @@ update_p = function(curr, humans, phi) {
 
   # for each covariate pattern (sampled at random)
   # TODO: if we decide to block update, we'd need to change this
-  s = sample(length(curr$p))
-  for (i in s) {
+  rows = sample(nrow(curr$p))
+  for (i in rows) {
+
+    cols = sample(ncol(curr$p))
+    for (j in cols) {
 
     # note that the likelihood only changes for the particular
     # covariate pattern, so we needn't compute the entire thing
@@ -146,7 +153,7 @@ update_p = function(curr, humans, phi) {
     # that the previous and/or next time point for this covariate
     # pattern is the next or previous observation respectively
 
-    p = curr$p
+    p = curr$p[i,]
 
     t = curr$t[i]
     if (t == 1) {
@@ -164,10 +171,10 @@ update_p = function(curr, humans, phi) {
       # as we're proposing from the prior, the hastings ratio is 1
       #
       # however, if rho is close to 0, we want to sample independently
-      p[i] = rnorm(1, mu[i] + (curr$p[i+1] - mu[i+1])*curr$rho, 1/sqrt(curr$tau))
+      p[j] = rnorm(1, mu[i,j] + (curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/sqrt(curr$tau))
     } else if (t == n_times) {
       #  e[t] ~ Normal(rho*e[t-1], tau)
-      p[i] = rnorm(1, mu[i] + (curr$p[i-1] - mu[i-1])*curr$rho, 1/sqrt(curr$tau))
+      p[j] = rnorm(1, mu[i,j] + (curr$p[i-1,j] - mu[i-1,j])*curr$rho, 1/sqrt(curr$tau))
     } else {
       # Here we're proposing from the prior. This means proposal is prior
       # so hastings ratio is 1.
@@ -188,24 +195,24 @@ update_p = function(curr, humans, phi) {
       # BUT: Mysteriously, the backcasting suggests this is not the case???
       #     Again, google backcasting AR(1) processes
       # f[t] ~ Normal(mu + rho*(f[t-1] + f[t+1] - 2*mu)/2, tau*2)
-      p[i] = rnorm(1, mu[i] + 0.5*(p[i-1] - mu[i-1])*curr$rho + 0.5*(p[i+1] - mu[i+1])*curr$rho, 1/(2*sqrt(curr$tau)))
+      p[j] = rnorm(1, mu[i,j] + 0.5*(curr$p[i-1,j] - mu[i-1,j])*curr$rho + 0.5*(curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/(2*sqrt(curr$tau)))
     }
     log_hastings_ratio = 0;
 
     # compute likelihood ratio
-    cov = curr$cov[i] # current covariate pattern
-    log_likelihood = log_lik(humans[[cov]], phi, p[curr$cov == cov])
-    log_likelihood_ratio = log_likelihood - curr$log_likelihood[cov]
+    log_likelihood = log_lik(humans[[i]], phi, p)
+    log_likelihood_ratio = log_likelihood - curr$log_likelihood[i]
 
     # accept/reject
     log_alpha = log_likelihood_ratio + log_hastings_ratio
     if (log_alpha > 0 || runif(1) < exp(log_alpha)) {
       # accept new values, copy to old
-      curr$p[i] = p[i]
-      curr$log_likelihood[cov] = log_likelihood
+      curr$p[i,] = p
+      curr$log_likelihood[i] = log_likelihood
       curr$accept = curr$accept + 1
     } else {
       curr$reject = curr$reject + 1
+    }
     }
   }
   return(curr)
@@ -232,38 +239,36 @@ mcmc = function(humans, phi, iterations = 10000) {
   # TODO: Need to pass Loc in
   x0 = expand.grid(Time = 1:n_times, Loc = 0:1, Source = 1:(n_sources-1))
 
-  #' unique covariate patterns (TODO: Need to pass this in)
-  cov = rep(1:80,3)
-
   #' time column (in case time is important)
-  t = x0$Time
+  t = rep(1:n_times, 2)
 
   #' design matrix
   X = model.matrix(~ -1 + as.factor(Source)/as.factor(Loc), data=x0)
   colnames(X) = NULL
 
-  X = matrix(0, 240, 6)
-  for (i in 1:6)
+  # model matrix is repeated for each source (as model is nested within source)
+  X = matrix(0, 80, 2)
+  for (i in 1:2)
     X[1:40 + (i-1)*40,i] = 1
 
   #' parameter vector
-  theta   = rep(0, ncol(X))
+  theta   = matrix(0, ncol(X), n_sources-1)
 
   #' precision, auto-correlation
   tau     = 1
   rho     = 0
 
   #' initialise p
-  p = numeric(nrow(X))
+  p = matrix(0, nrow(X), n_sources-1)
 
   #' compute log-likelihood for each covariate pattern
   log_likelihood = numeric(length(humans))
   for (x in seq_along(humans)) {
-    log_likelihood[x] = log_lik(humans[[x]], phi, p[cov == x])
+    log_likelihood[x] = log_lik(humans[[x]], phi, p[x,])
   }
 
   # storage for the current iteration
-  curr = list(p = p, X = X, t = t, cov = cov, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
+  curr = list(p = p, X = X, t = t, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
 
   # main MCMC loop
   post_i = 0;
