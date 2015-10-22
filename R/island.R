@@ -36,18 +36,24 @@ update_priors = function(curr) {
   rho_0      = 0
   rho_prec   = 16
 
+  # The sampling is based on
+  #
+  # Bayes regression with autoregressive errors: A Gibbs sampling approach
+  # by Siddhartha Gibb (1993)
+  #
+  # However, it is generalised so that it works for multivariate responses and
+  # parameter vectors.
+  #
   # 1. Transform to eliminate the auto-correlation
   #
   # p_star = rho(L)p
   # X_star = rho(L)X
   #
-  # TODO: Generalise this. In the case of clustered data
-  #       we want to keep everything within their cluster
-  #       ATM this is enforced due to order (boo, hiss!)
+  # NOTE: We assume here that the data are ordered in time, and that
+  #       subsequent rows have the same non-time covariates. Thus
+  #       any location for example needs to be blocked so that within
+  #       block the time is sequential.
   #
-  #       In addition, there's an explicit assumption here
-  #       that the number of observations is constant (it
-  #       should be when we setup the design matrix though)
   t1 = curr$t != 1
   t2 = curr$t != max(curr$t)
   p = curr$p[t1,] - curr$rho*curr$p[t2,]
