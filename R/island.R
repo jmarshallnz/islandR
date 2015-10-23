@@ -246,10 +246,9 @@ update_p = function(curr, humans, phi) {
   return(curr)
 }
 
-mcmc = function(humans, phi, iterations = 10000) {
+mcmc = function(humans, phi, iterations = 10000, burnin = 1000) {
 
   #' MCMC parameters
-  burnin     = 1000
   thinning   = 100
 
   # priors
