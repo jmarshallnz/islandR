@@ -34,7 +34,7 @@ update_priors = function(curr) {
   tau_shape  = 1 #0.1
   tau_rate   = 10 #0.1
   rho_0      = 0
-  rho_prec   = 16
+  rho_prec   = 4
 
   # The sampling is based on
   #
@@ -161,49 +161,71 @@ update_p = function(curr, humans, phi) {
 
     p = curr$p[i,]
 
+    updater = sample(2, 1)
+
     t = curr$t[i]
-    if (t == 1) {
-      # rearranging to find the conditional prior on e[1] gives
-      #
-      #  e[1] ~ Normal(1/rho*e[2], tau/rho^2)
-      #
-      # is what you'd think. However, it turns out (mysteriously)
-      # that it is actually
-      #
-      #  e[1] ~ Normal(rho*e[2], tau)
-      #
-      # TODO: not exactly sure why though??? Google backcasting?
-      #
-      # as we're proposing from the prior, the hastings ratio is 1
-      #
-      # however, if rho is close to 0, we want to sample independently
-      p[j] = rnorm(1, mu[i,j] + (curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/sqrt(curr$tau))
-    } else if (t == n_times) {
-      #  e[t] ~ Normal(rho*e[t-1], tau)
-      p[j] = rnorm(1, mu[i,j] + (curr$p[i-1,j] - mu[i-1,j])*curr$rho, 1/sqrt(curr$tau))
+    if (updater == 1) {
+      e = curr$p - mu
+      en = e[i,]
+      en[j] = rnorm(1, e[i,j], 2*p_proposal_sigma)
+      p[j] = mu[i,j] + en[j]
+      if (t == 1) {
+        # prior ratio
+        # p[1] - mu[1] - rho*(p[2] - mu[2]) ~ Normal(0, tau)
+        log_hastings_ratio = -0.5*curr$tau*((en[j] - curr$rho*e[i+1,j])^2
+                                           -(e[i,j] - curr$rho*e[i+1,j])^2)
+      } else if (t == n_times) {
+        log_hastings_ratio = -0.5*curr$tau*((en[j] - curr$rho*e[i-1,j])^2
+                                           -(e[i,j] - curr$rho*e[i-1,j])^2)
+      } else {
+        log_hastings_ratio = -0.5*0.5*curr$tau*((en[j] - 0.5*curr$rho*(e[i-1,j] + e[i+1,j]))^2
+                                               -(e[i,j] - 0.5*curr$rho*(e[i-1,j] + e[i+1,j]))^2)
+      }
     } else {
-      # Here we're proposing from the prior. This means proposal is prior
-      # so hastings ratio is 1.
 
-      # Alternate is to propose from some other symmetric distribution, so
-      # hastings ratio is prior ratio.
+      if (t == 1) {
+        # rearranging to find the conditional prior on e[1] gives
+        #
+        #  e[1] ~ Normal(1/rho*e[2], tau/rho^2)
+        #
+        # is what you'd think. However, it turns out (mysteriously)
+        # that it is actually
+        #
+        #  e[1] ~ Normal(rho*e[2], tau)
+        #
+        # TODO: not exactly sure why though??? Google backcasting?
+        #
+        # as we're proposing from the prior, the hastings ratio is 1
+        #
+        # however, if rho is close to 0, we want to sample independently
+        p[j] = rnorm(1, mu[i,j] + (curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/sqrt(curr$tau))
+      } else if (t == n_times) {
+        #  e[t] ~ Normal(rho*e[t-1], tau)
+        p[j] = rnorm(1, mu[i,j] + (curr$p[i-1,j] - mu[i-1,j])*curr$rho, 1/sqrt(curr$tau))
+      } else {
+        # Here we're proposing from the prior. This means proposal is prior
+        # so hastings ratio is 1.
 
-      # We can use the above and below to get a better proposal conditioned
-      # on all the other values.
-      #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
-      #   1/rho(p[t+1] - mu[t+1]) - (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
+        # Alternate is to propose from some other symmetric distribution, so
+        # hastings ratio is prior ratio.
 
-      #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
-      #   -1/rho(p[t+1] - mu[t+1]) + (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
-      #
-      #   p[t] - mu[t] - rho/2*(p[t-1] - mu[t-1]) - 1/rho/2*(p[t+1] - mu[t+1]) ~ Normal(0, tau*(1 + 1/rho^2) / 4)
+        # We can use the above and below to get a better proposal conditioned
+        # on all the other values.
+        #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
+        #   1/rho(p[t+1] - mu[t+1]) - (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
 
-      # BUT: Mysteriously, the backcasting suggests this is not the case???
-      #     Again, google backcasting AR(1) processes
-      # f[t] ~ Normal(mu + rho*(f[t-1] + f[t+1] - 2*mu)/2, tau*2)
-      p[j] = rnorm(1, mu[i,j] + 0.5*(curr$p[i-1,j] - mu[i-1,j])*curr$rho + 0.5*(curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/(2*sqrt(curr$tau)))
+        #   p[t] - mu[t] - rho*(p[t-1] - mu[t-1]) ~ Normal(0, tau)
+        #   -1/rho(p[t+1] - mu[t+1]) + (p[t] - mu[t]) ~ Normal(0, tau/rho^2)
+        #
+        #   p[t] - mu[t] - rho/2*(p[t-1] - mu[t-1]) - 1/rho/2*(p[t+1] - mu[t+1]) ~ Normal(0, tau*(1 + 1/rho^2) / 4)
+
+        # BUT: Mysteriously, the backcasting suggests this is not the case???
+        #     Again, google backcasting AR(1) processes
+        # f[t] ~ Normal(mu + rho*(f[t-1] + f[t+1] - 2*mu)/2, tau*2)
+        p[j] = rnorm(1, mu[i,j] + 0.5*(curr$p[i-1,j] - mu[i-1,j] + curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/sqrt(2*curr$tau))
+      }
+      log_hastings_ratio = 0;
     }
-    log_hastings_ratio = 0;
 
     # compute likelihood ratio
     log_likelihood = log_lik(humans[[i]], phi, p)
