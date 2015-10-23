@@ -1,9 +1,8 @@
+library(MASS)
 library(stringr)
 library(dplyr)
-
-# load in our dataset (relative to current working directory)
-db_file <- "running/20150603.csv"
-db <- read.csv(db_file)
+library(tidyr)
+library(islandR)
 
 # run the number of cases we want and so on
 
@@ -25,21 +24,16 @@ names(source_labels) <- source_label_map$Number
 # input parameters
 alleles_to_impute <- max(c(suppressWarnings(as.numeric(sources$Imputed)), 0), na.rm=T)
 
-human   <- "Human"
+# read human data
+humans <- read.csv("running/humans.csv")
 
-# Setup data
-db <- db %>% filter(Imputed <= alleles_to_impute)
-
-humans <- db %>% filter(Source == human, Year <= 2014)
-
-library(islandR)
 sts_available = get_genotypes()$ST
 
 # now map our humans to rows of phi
-humans$ST = match(humans$ST, sts_available)
+#humans$ST = match(humans$ST, sts_available)
 
 # table up the humans to speed things up a bit
-humans = as.matrix(humans %>% filter(!is.na(UR_bool)) %>% mutate(UR_bool = ifelse(UR_bool == "Rural", 1, 0)) %>% group_by(UR_bool, Quarter, ST) %>% summarise(n = n()))
+humans = as.matrix(humans[-1])
 
 hum = list()
 n_times = max(humans[,2])
@@ -48,7 +42,7 @@ count   = 0;
 for (j in unique(humans[,1])) {
   for (i in 1:n_times) {
     count = count + 1;
-    hum[[count]] = as.matrix(humans[humans[,1] == j & humans[,2] == i, 3:4])
+    hum[[count]] = as.matrix(humans[humans[,1] == j & humans[,2] == i, 3:4, drop=FALSE])
   }
 }
 
@@ -73,7 +67,8 @@ for (j in nj) {
   ar   = ar + iter$ar
 }
 
-saveRDS(post, paste0("post_",sj,"_",ej,".rds"))
+append = paste0("_",sj,"_",ej)
+saveRDS(post, paste0("post",append,".rds"))
 
 # take a look at the posteriors...
 
@@ -125,25 +120,19 @@ plot_density = function(post, variable, prior_fun) {
   }
 }
 
-#pdf("diag_traces.pdf", width=11, height=8)
-#plot_traces(post, "theta")
-#plot_traces(post, "tau")
+pdf(paste0("diag_traces", append, ".pdf"), width=11, height=8)
+plot_traces(post, "theta")
+plot_traces(post, "tau")
 plot_traces(post, "rho")
-#dev.off()
+dev.off()
 
-#pdf("diag_density.pdf", width=11, height=8)
+pdf(paste0("diag_density", append, ".pdf"), width=11, height=8)
 plot_density(post, "theta", prior_fun = function(x) { dnorm(x, 0, 1/sqrt(0.1)) })
 plot_density(post, "tau", prior_fun = function(x) { dgamma(x, 0.1, 0.1) })
 plot_density(post, "rho", prior_fun = function(x) { dnorm(x, 0, 1/sqrt(16)) })
-#dev.off()
+dev.off()
 
 post_theta = get_var(post, "theta")
-
-#pdf("diag_correlation.pdf", width=11, height=8)
-#pairs(cbind(post_theta, post_rho, post_tau), labels=c(paste0("theta", 1:ncol(post_theta)), "rho", "tau"))
-#dev.off()
-
-#post_p   = do.call(rbind, lapply(post, function(x) { as.numeric(x[["p"]]) }))
 
 # figure out which terms are signicant by generating P-values
 
@@ -189,8 +178,7 @@ for (j in seq_along(p_pred)) {
 }
 
 # right, now plot these distributions
-pdf("attribution.pdf", width=8, height=11)
-library(tidyr)
+pdf(paste0("attribution", append, ".pdf"), width=8, height=11)
 for (j in seq_along(p_pred)) {
   p_max = apply(p_pred[[j]], 2, quantile, 0.975)
   p_min = apply(p_pred[[j]], 2, quantile, 0.025)
@@ -220,7 +208,7 @@ for (j in seq_along(post_p)) {
   post_p[[j]] = post_p[[j]] / p_sum
 }
 
-pdf("attribution_time.pdf", width=8, height=11)
+pdf(paste0("attribution_time", append, ".pdf"), width=8, height=11)
 for (j in seq_along(post_p)) {
   mu = apply(post_p[[j]], 2, mean)
   li = apply(post_p[[j]], 2, quantile, 0.025)
@@ -236,33 +224,6 @@ for (j in seq_along(post_p)) {
   lines(times, mu[times+n_times], lwd=2)
 }
 dev.off()
-
-for (j in seq_along(post_p)) {
-  #
-  #  li = apply(post_p[[j]], 2, quantile, 0.025)
-  #  ui = apply(post_p[[j]], 2, quantile, 0.975)
-  #  mu = post_[[[j]]][1,]
-  #  mu = post_[[[j]]][1,]
-  par(mfrow=c(2,1), mar=c(4,4,2,2))
-  times = 1:n_times
-  plot(NULL, xlim=range(times), ylim=c(0,1), type="n", main=paste(source_labels[as.character(j)], "Urban", sep=" - "))
-  #  polygon(c(times, rev(times)), c(ui[times], rev(li[times])), col="grey80", border=NA)
-  for (i in 1:nrow(post_p[[j]])) {
-    mu = post_p[[j]][i,]
-    lines(times, mu[times])
-  }
-  mu = apply(post_p[[j]], 2, mean)
-  lines(times, mu[times], lwd=2)
-
-  plot(NULL, xlim=range(times), ylim=c(0,1), type="n", main=paste(source_labels[as.character(j)], "Rural", sep=" - "))
-  #  polygon(c(times, rev(times)), c(ui[times+n_times], rev(li[times+n_times])), col="grey80", border=NA)
-  for (i in 1:nrow(post_p[[j]])) {
-    mu = post_p[[j]][i,]
-    lines(times, mu[times+n_times])
-  }
-  mu = apply(post_p[[j]], 2, mean)
-  lines(times, mu[times+n_times], lwd=2)
-}
 
 # the following is actual analysis
 # pdf("urban_rural.pdf", width=11, height=8)
