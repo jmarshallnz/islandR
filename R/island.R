@@ -55,7 +55,7 @@ update_priors = function(curr) {
   #       block the time is sequential.
   #
   t1 = curr$t != 1
-  t2 = curr$t != max(curr$t)
+  t2 = curr$t != ntimes
   p = curr$p[t1,] - curr$rho*curr$p[t2,]
   X = curr$X[t1,] - curr$rho*curr$X[t2,]
 
@@ -97,7 +97,7 @@ update_priors = function(curr) {
   rate  = tau_rate  + rss / 2
   curr$tau   = rgamma(1, shape, rate=rate)
 
-  # 3. Sample phi
+  # 3. Sample rho
   #
   # Prior is TN(rho_0, rho_prec)
   #
