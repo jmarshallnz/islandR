@@ -92,7 +92,7 @@ update_priors = function(curr) {
   e = p - X %*% curr$theta
   rss = sum(e^2)
 
-  n     = length(p)
+  n     = nrow(p)*ncol(p)
   shape = tau_shape + n / 2
   rate  = tau_rate  + rss / 2
   curr$tau   = rgamma(1, shape, rate=rate)
