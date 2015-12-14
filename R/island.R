@@ -161,7 +161,7 @@ update_priors = function(curr) {
 update_p = function(curr, humans, phi) {
 
   # proposal distribution
-  p_proposal_sigma = 1
+  p_proposal_sigma = 2
 
   # first up, compute the fitted values and residuals
   mu = curr$X %*% curr$theta
