@@ -246,7 +246,7 @@ update_p = function(curr, humans, phi) {
   return(curr)
 }
 
-mcmc = function(humans, phi, iterations = 10000, burnin = 1000) {
+mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
 
   #' MCMC parameters
   thinning   = 100
@@ -257,26 +257,19 @@ mcmc = function(humans, phi, iterations = 10000, burnin = 1000) {
   # accept/reject
   accept_reject = numeric(2)
 
-  n_sources = ncol(phi)
-  n_times   = 40        # TODO: Need to pass this in
-
   # posterior
   posterior = list()
 
-  # TODO: Need to pass Loc in
-  x0 = expand.grid(Time = 1:n_times, Loc = 0:1)
-
-  x0$Season = as.factor((x0$Time - 1) %% 4 + 1)
-  x0$Intervention = as.factor(ifelse(x0$Time > 12, 1, 0))
-  x0$Loc = as.factor(x0$Loc)
-
   #' time column (in case time is important)
-  t = rep(1:n_times, 2)
+  t = x$Time
 
   #' design matrix
-  X = model.matrix(~ Season*Intervention*Loc, data=x0)
+  if (is.null(x))
+    x = data.frame(dummy=1)
+  X = model.matrix(formula, data=x)
 
   #' parameter vector
+  n_sources = ncol(phi)
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
 

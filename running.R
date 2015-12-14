@@ -2,6 +2,7 @@ library(MASS)
 library(stringr)
 library(dplyr)
 library(tidyr)
+library(lubridate)
 library(islandR)
 
 # run the number of cases we want and so on
@@ -25,24 +26,36 @@ names(source_labels) <- source_label_map$Number
 alleles_to_impute <- max(c(suppressWarnings(as.numeric(sources$Imputed)), 0), na.rm=T)
 
 # read human data
-humans <- read.csv("running/humans.csv")
+dat = read.csv("data-raw/human_types.csv", stringsAsFactors = FALSE)
+hdat = dat %>%
+         mutate(Month = month(as.Date(Sampled.Date)), YearMonth = Month + (Year-2005)*12) %>%
+         filter(Source == "Human", Year >= 2005, Year <= 2014) %>% select(ST, UR_bool, YearMonth) %>% group_by(ST, UR_bool, YearMonth) %>% summarise(Number=n())
 
 sts_available = get_genotypes()$ST
+hdat$ST = match(hdat$ST, sts_available)
 
-# now map our humans to rows of phi
-#humans$ST = match(humans$ST, sts_available)
+# TODO: Derive the model matrix from the above
+n_times = 120
+n_loc   = 2
 
-# table up the humans to speed things up a bit
-humans = as.matrix(humans[-1])
+x0 = expand.grid(Time = 1:n_times, Loc = 0:(n_loc-1))
+x0$Season = as.factor((x0$Time - 1) %% 12 + 1)
+x0$Intervention = as.factor(ifelse(x0$Time > 12, 1, 0))
+x0$Loc = as.factor(x0$Loc)
 
-hum = list()
-n_times = max(humans[,2])
-n_loc   = length(unique(humans[,1]))
+formula = ~ Season*Intervention*Loc
+
+# TODO: Ideally hum would be generated from humans + the model matrix.
+#       i.e. for each row of model matrix, find corresponding human cases and produce
+#            the list
+hum <- list()
 count   = 0;
-for (j in unique(humans[,1])) {
+loc_unique = na.omit(unique(hdat$UR_bool))
+for (j in 1:n_loc) {
   for (i in 1:n_times) {
     count = count + 1;
-    hum[[count]] = as.matrix(humans[humans[,1] == j & humans[,2] == i, 3:4, drop=FALSE])
+    sts = hdat %>% filter(UR_bool == loc_unique[j], YearMonth == i) %>% ungroup %>% select(ST, Number)
+    hum[[count]] = as.matrix(sts)
   }
 }
 
@@ -62,7 +75,7 @@ for (j in nj) {
 
   # TODO: We'd ideally pass in the model matrix
   # now run our island model MCMC loop
-  system.time({iter = mcmc(hum, phi, 20000)})
+  system.time({iter = mcmc(hum, x0, formula, phi, 20000)})
   post = c(post, iter$post)
   ar   = ar + iter$ar
 }
@@ -152,15 +165,11 @@ for (var in post_theta) {
 }
 
 # compute predictions for each season/location/source
-x0 = expand.grid(Time = 1:n_times, Loc = 0:(n_loc-1))
 
-x0$Season = as.factor((x0$Time - 1) %% 4 + 1)
-x0$Intervention = as.factor(ifelse(x0$Time > 12, 1, 0))
-x0$Loc = as.factor(x0$Loc)
-
-x0 = expand.grid(Season = as.factor(1:4), Intervention=as.factor(0:1), Loc=as.factor(0:1))
 #' design matrix
-X = model.matrix(~ Season*Intervention*Loc, data=x0)
+if (is.null(x0))
+  x0 = data.frame(dummy=1)
+X = model.matrix(formula, data=x0)
 
 p_pred = list()
 for (j in seq_along(post_theta)) {
