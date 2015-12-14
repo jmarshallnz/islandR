@@ -36,6 +36,12 @@ update_priors = function(curr) {
   rho_0      = 0
   rho_prec   = 4
 
+  ntimes     = max(curr$t, 1)
+
+  if (ntimes > 1) {
+
+    ## AR1 model
+
   # The sampling is based on
   #
   # Bayes regression with autoregressive errors: A Gibbs sampling approach
@@ -118,6 +124,37 @@ update_priors = function(curr) {
   if (rho < 1 && rho > -1)
     curr$rho = rho
 
+
+  } else {
+
+    # no time, so just solve directly
+
+    curr$theta = matrix(0, nrow(curr$theta), ncol(curr$theta))
+#
+#     X = curr$X
+#     p = curr$p
+#
+#     var_hat   = solve(theta_prec + curr$tau * t(X) %*% X)
+#     theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(X) %*% p)
+#
+#     # now, to do the sampling we need to iterate over the columns of theta_hat
+#     # as it is a matrix
+#     for (j in 1:ncol(curr$theta))
+#       curr$theta[,j] = mvrnorm(1, theta_hat[,j], var_hat)
+#
+#     # 2. Sample tau
+#     #
+#     # prior tau ~ Gamma(tau_shape, tau_rate)
+#     #
+#     # posterior will be (tau_shape + n/2, tau_rate + (p - X theta)'(p - X theta)/2)
+#     e = p - X %*% curr$theta
+#     rss = sum(e^2)
+#
+#     n     = nrow(p)*ncol(p)
+#     shape = tau_shape + n / 2
+#     rate  = tau_rate  + rss / 2
+#     curr$tau   = rgamma(1, shape, rate=rate)
+  }
   curr
 }
 
@@ -129,7 +166,7 @@ update_p = function(curr, humans, phi) {
   # first up, compute the fitted values and residuals
   mu = curr$X %*% curr$theta
 
-  n_times = max(curr$t)
+  n_times = max(curr$t, 1)
 
   # for each covariate pattern (sampled at random)
   # TODO: if we decide to block update, we'd need to change this
@@ -160,6 +197,10 @@ update_p = function(curr, humans, phi) {
     # pattern is the next or previous observation respectively
 
     p = curr$p[i,]
+
+    if (n_times > 1) {
+
+      ## AR1 model...
 
     updater = sample(2, 1)
 
@@ -225,6 +266,18 @@ update_p = function(curr, humans, phi) {
         p[j] = rnorm(1, mu[i,j] + 0.5*(curr$p[i-1,j] - mu[i-1,j] + curr$p[i+1,j] - mu[i+1,j])*curr$rho, 1/sqrt(2*curr$tau))
       }
       log_hastings_ratio = 0;
+    }
+
+    } else {
+      ## No time aspect -> use standard M-H
+      e = curr$p - mu
+      en = e[i,]
+      en[j] = rnorm(1, e[i,j], p_proposal_sigma)
+      p[j] = mu[i,j] + en[j]
+
+      # prior ratio
+      # p[1] - mu[1] ~ Normal(0, tau)
+      log_hastings_ratio = -0.5*curr$tau*(en[j]^2 - e[i,j]^2)
     }
 
     # compute likelihood ratio
