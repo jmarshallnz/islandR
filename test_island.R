@@ -46,13 +46,25 @@ comb_h <- humans %>% dplyr::select(one_of(mlst_cols)) %>% mutate(Source = 0)
 data <- rbind(comb_h, animals)
 
 mat_data <- as.matrix(data)
-island(mat_data)
+out <- island(mat_data)
 
+length(out)
+names(out)
 
+# compare with previous
+for (curr in names(out)) {
+  phi = read.table(paste0("~/data/R/island/running/temp/4_source_imputed/original/phi_", curr, "_output_5.txt"), header=TRUE)
 
+  new_phi = as.matrix(out[[curr]])
+  old_phi = as.matrix(phi[9:12])
+  if (!all.equal(new_phi, old_phi, check.attributes = FALSE, tolerance=1e-6)) {
+    cat("boo!", curr, "differs\n")
+  } else {
+    cat(curr, "is all good!\n")
+  }
+}
 
-
-
+# super! :)
 
 
 
