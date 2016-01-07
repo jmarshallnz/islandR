@@ -59,6 +59,21 @@ for (j in 1:n_loc) {
   }
 }
 
+# TESTING!
+x0      = NULL
+formula = ~ 1
+hdat = dat %>%
+  mutate(Month = month(as.Date(Sampled.Date)), YearMonth = Month + (Year-2005)*12) %>%
+  filter(Source == "Human", Year >= 2005, Year <= 2014) %>% select(ST, UR_bool, YearMonth) %>% group_by(ST) %>% summarise(Number=n())
+
+sts_available = get_genotypes()$ST
+hdat$ST = match(hdat$ST, sts_available)
+
+hum = list()
+hum[[1]] = as.matrix(hdat)
+# END TESTING!
+
+
 # for each ST, create phi from posterior of previous runs
 post = NULL;
 
@@ -70,7 +85,8 @@ for (j in nj) {
 
   phi = matrix(NA, length(sts_available), length(source_labels))
   for (st in seq_along(sts_available)) {
-    phi[st,] =  as.numeric(get_source_probability_sample(sts_available[st], j))
+#    phi[st,] =  as.numeric(get_source_probability_sample(sts_available[st], j))
+    phi[st,] =  as.numeric(4*colMeans(get_source_probability_sample(sts_available[st])))
   }
 
   # TODO: We'd ideally pass in the model matrix
@@ -80,63 +96,54 @@ for (j in nj) {
   ar   = ar + iter$ar
 }
 
+pdf("output.pdf", width=11, height=8)
+# do some plots
+par(mfrow=c(3,1))
+plot_traces(post, "p")
+
+par(mfrow=c(1,1))
+pairs(get_var(post, "p"), labels=paste("p", 1:3))
+
+post_theta = get_var(post, "p")
+
+#' design matrix
+if (is.null(x0))
+  x0 = data.frame(dummy=1)
+X = model.matrix(formula, data=x0)
+
+p_pred = list()
+for (j in seq_along(post_theta)) {
+  p_pred[[j]] = t(exp(X %*% t(post_theta[[j]])))
+  colnames(p_pred[[j]])
+}
+p_pred[[length(p_pred)+1]] = matrix(1, nrow(p_pred[[1]]), ncol(p_pred[[1]]))
+
+p_sum = matrix(0, nrow(p_pred[[1]]), ncol(p_pred[[1]]))
+for (j in seq_along(p_pred)) {
+  p_sum = p_sum + p_pred[[j]]
+}
+for (j in seq_along(p_pred)) {
+  p_pred[[j]] = p_pred[[j]] / p_sum
+}
+
+par(mfrow=c(2,2))
+for (j in 1:4)
+  plot(p_pred[[j]], type="l")
+
+par(mfrow=c(1,1))
+plot(density(p_pred[[1]]), xlim=c(0,1), type="l")
+for (j in 2:4) lines(density(p_pred[[j]]), col=j)
+
+dev.off()
+
+
 append = paste0("_",sj,"_",ej)
 saveRDS(post, paste0("post",append,".rds"))
 
-# take a look at the posteriors...
-
-get_var = function(post, variable) {
-  ncol = 1;
-  if (!is.null(dim(post[[1]][[variable]]))) {
-    ncol = ncol(post[[1]][[variable]])
-    lapply(1:ncol, function(col) { do.call(rbind, lapply(post, function(x) { x[[variable]][,col] })) })
-  } else {
-    list(do.call(rbind, lapply(post, function(x) { as.numeric(x[[variable]]) })))
-  }
-}
-
-# traces...
-plot_traces = function(post, variable) {
-  post_list = get_var(post, variable)
-  for (j in seq_along(post_list)) {
-    post_var = post_list[[j]]
-    name = variable
-    if (j > 1)
-      name = paste(name, j)
-    plot(NULL, xlim=c(1,nrow(post_var)), ylim=range(post_var), type="n", main=name, ylab=variable, xlab="iteration")
-    for (i in 1:ncol(post_var))
-      lines(1:nrow(post_var), post_var[,i], col=i)
-  }
-}
-
-plot_density = function(post, variable, prior_fun) {
-  post_list = get_var(post, variable)
-  for (j in seq_along(post_list)) {
-    post_var = post_list[[j]]
-    name = variable
-    if (j > 1)
-      name = paste(name, j)
-    dens = list()
-    ylim = xlim = NA
-    for (i in 1:ncol(post_var)) {
-      dens[[i]] = density(post_var[,i])
-      ylim = range(ylim, dens[[i]]$y, na.rm=TRUE)
-      xlim = range(xlim, dens[[i]]$x, na.rm=TRUE)
-    }
-    plot(NULL, xlim=xlim, ylim=ylim, type="n", main=name, xlab=variable, ylab="density")
-    for (i in 1:ncol(post_var)) {
-      lines(dens[[i]]$x, dens[[i]]$y, col=i)
-      # prior
-      x = seq(xlim[1], xlim[2], length.out = 100)
-      lines(x, prior_fun(x), col=i, lty="dotted")
-    }
-  }
-}
-
 pdf(paste0("diag_traces", append, ".pdf"), width=11, height=8)
-plot_traces(post, "theta")
+
 plot_traces(post, "tau")
-plot_traces(post, "rho")
+plot_traces(post, "p")
 dev.off()
 
 pdf(paste0("diag_density", append, ".pdf"), width=11, height=8)
@@ -146,6 +153,12 @@ plot_density(post, "rho", prior_fun = function(x) { dnorm(x, 0, 1/sqrt(16)) })
 dev.off()
 
 post_theta = get_var(post, "theta")
+
+
+# TESTING STUFF
+
+post_theta = get_var(post, "p")
+# END TESTING STUFF
 
 # figure out which terms are signicant by generating P-values
 
@@ -186,6 +199,10 @@ for (j in seq_along(p_pred)) {
   p_pred[[j]] = p_pred[[j]] / p_sum
 }
 
+plot(density(p_pred[[1]]), xlim=c(0,1), type="l")
+for (j in 2:4) lines(density(p_pred[[j]]), col=j)
+
+
 # right, now plot these distributions
 pdf(paste0("attribution", append, ".pdf"), width=8, height=11)
 for (j in seq_along(p_pred)) {
@@ -193,7 +210,10 @@ for (j in seq_along(p_pred)) {
   p_min = apply(p_pred[[j]], 2, quantile, 0.025)
   d = cbind(x0, p_max, p_min, t(p_pred[[j]]))
   par(mfrow=c(2,1), mar=c(4,4,2,2))
-  d2 = gather(d, Iteration, Proportion, -(Season:p_min))
+  d2 = gather(d, Iteration, Proportion, -(Time:p_min)) # TODO: ideally this wouldn't depend on other stuff
+
+  # TODO: This needs to be updated from the laptop so we actually produce the plots we want (or maybe
+  #       from the talk repo???)
   boxplot(Proportion ~ interaction(Season, Intervention), data=d2 %>% filter(Loc == 0, Proportion < p_max, Proportion > p_min), main=paste(source_labels[as.character(j)], "Urban", sep=" - "), names = rep(c("Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"), 2), ylim=c(0,1), cex=0.5, cex.axis=0.9)
   mtext(c("2005-2007", "2008-2014"), side = 1, line = 2.5, at = c(2.5, 6.5))
   boxplot(Proportion ~ interaction(Season, Intervention), data=d2 %>% filter(Loc == 1, Proportion < p_max, Proportion > p_min), main=paste(source_labels[as.character(j)], "Rural", sep=" - "), names = rep(c("Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec"), 2), ylim=c(0,1), cex=0.5, cex.axis=0.9)

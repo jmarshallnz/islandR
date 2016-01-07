@@ -278,6 +278,15 @@ update_p = function(curr, humans, phi) {
       # prior ratio
       # p[1] - mu[1] ~ Normal(0, tau)
       log_hastings_ratio = -0.5*curr$tau*(en[j]^2 - e[i,j]^2)
+
+      # HACK
+
+#      en = e[i,]
+#      en[j] = rnorm(1, e[i,j], p_proposal_sigma)
+#      en = en - mean(en)
+#      p = mu[i,] + en
+#      log_hastings_ratio = -0.5*curr$tau*sum(p^2 - curr$p[i,]^2)
+      # END HACK
     }
 
     # compute likelihood ratio
@@ -326,12 +335,20 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
 
+  ## HACK
+#  theta   = matrix(0, ncol(X), n_sources)
+  ## ENDHACK
+
   #' precision, auto-correlation
   tau     = 1
   rho     = 0
 
   #' initialise p
   p = matrix(0, nrow(X), n_sources-1)
+
+  ## HACK
+#  p = matrix(0, nrow(X), n_sources)
+  ## ENDHACK
 
   #' compute log-likelihood for each covariate pattern
   log_likelihood = numeric(length(humans))
