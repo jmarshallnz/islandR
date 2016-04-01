@@ -7,8 +7,12 @@ Authors@R: person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz",
     role = c("aut", "cre"))
 Description: Estimates source attribution probabilities based on genotype data.
 License: GPL-3
-Depends: R(>= 2.10)
+Depends:
+    R(>= 2.10)
 LazyData: TRUE
 LinkingTo: Rcpp
-Imports: Rcpp, MASS
+Imports:
+    Rcpp,
+    MASS
 URL: http://github.com/jmarshallnz/islandR
+RoxygenNote: 5.0.1
