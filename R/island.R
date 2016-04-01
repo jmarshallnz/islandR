@@ -1,9 +1,6 @@
-#' Island model, metropolis-hastings fit on logit scale
-#'
-#' Eventually this will include AR1() model
 library(MASS)
 
-#' Log-likelihood function
+# Log-likelihood function
 log_lik_R = function(humans, phi, p) {
   loglik = 0
   # run through human isolates
