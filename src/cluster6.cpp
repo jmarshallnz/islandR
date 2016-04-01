@@ -267,13 +267,14 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	int iter, fiter, move, ctr = 0;
 	const int fniter = 20000;
 	const int fburnin = 10000;
-	const int inc = MAX((int)floor((double)niter*.9/100.),1);
 	const int burnin = (int)floor((double)niter*.1);
-	for(iter=0;iter<niter;iter++) {
+	const int inc = MAX((int)floor((double)niter/100.),1);
+	for(iter=0;iter<niter+burnin;iter++) {
 		if(iter>=burnin && (iter-burnin)%inc==0) {
 
 			/* Now dump the likelihoods for this iteration.
-			   Weird that this has nothing to do with the thinning */
+			   Weird that this has nothing to do with the thinning, which applies only
+		     to the evolutionary parameters. */
 
 			/* Compute likelihood of human isolate from each source */
 		  Matrix<double> phi(human.nrows(), ng);
@@ -417,11 +418,11 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 
 		/* output thinned traces of island model fit */
-		if((iter+1)%thin==0)
+		if(iter >= burnin && (iter+1)%thin==0)
 		  append_traces(iter+1, A[use], R[use], likelihood.LOG(), newlik.LOG(), logalpha.LOG(), move, evolution_traces, trace_row++);
 
 		if((current=clock())>next) {
-		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
+		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
 			next = current + (clock_t)CLOCKS_PER_SEC;
 		}
 	}
