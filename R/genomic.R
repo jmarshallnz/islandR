@@ -19,16 +19,3 @@ get_source_probability_sample <- function(genotype, sample = NULL) {
     wch <- wch & genotype_attribution$Iteration == sample
   return(genotype_attribution[wch, 9:12]) # TODO: Make indicies a function of data
 }
-
-#' Estimate the sampling distribution of genotypes on each source.
-#' @export
-#' @param formula one sided formula specifying the sources for genomic attribution
-#' @param data a data frame to use for the columns specified in the formula parameter
-#' @param samples number of iterations to use to estimate genomic attribution
-#' @return object of class `genomic` consisting of TODO: Finish dox, create class etc.
-st_fit <- function(formula, data, method = "island", samples = 500, thinning = 50, chains = 1) {
-  # TODO: 1. pull data out of data frame/environment using the model formula
-  #       2. run island model
-  #       3. return genomic class/island class as necessary
-  #       4. alter rest of code to work with island/class
-}
