@@ -24,7 +24,7 @@ inverse_logit = function(logit_p) {
   pn / sum(pn)
 }
 
-update_priors = function(curr) {
+update_hyper_theta = function(curr) {
   # hyper-priors
   theta_0    = matrix(0, nrow(curr$theta), ncol(curr$theta))
   theta_prec = diag(0.1, nrow(curr$theta)) # same prior across all sources
@@ -126,36 +126,113 @@ update_priors = function(curr) {
 
     # no time, so just solve directly
 
-    curr$theta = matrix(0, nrow(curr$theta), ncol(curr$theta))
+#    curr$theta = matrix(0, nrow(curr$theta), ncol(curr$theta))
+
+    # deterministic update as there is no hierachical model without time involved.
+    # if there was a hierarchical model, we'd need the bit commented out as well,
+    # but I dunno what sort of model that would be. I guess we'd need a random effect
+    # for this, but there's no obvious random effects to include in our model, right?
+
+    # maybe a different p for the same covariate pattern across multiple people?
+    # which I guess may be soaking up additional variation?
+
+#    curr$theta = solve(t(X) %*% X) %*% t(X) %*% p
+#    curr$tau = 1
 #
-#     X = curr$X
-#     p = curr$p
-#
-#     var_hat   = solve(theta_prec + curr$tau * t(X) %*% X)
-#     theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(X) %*% p)
-#
-#     # now, to do the sampling we need to iterate over the columns of theta_hat
-#     # as it is a matrix
-#     for (j in 1:ncol(curr$theta))
-#       curr$theta[,j] = mvrnorm(1, theta_hat[,j], var_hat)
-#
-#     # 2. Sample tau
-#     #
-#     # prior tau ~ Gamma(tau_shape, tau_rate)
-#     #
-#     # posterior will be (tau_shape + n/2, tau_rate + (p - X theta)'(p - X theta)/2)
-#     e = p - X %*% curr$theta
-#     rss = sum(e^2)
-#
-#     n     = nrow(p)*ncol(p)
-#     shape = tau_shape + n / 2
-#     rate  = tau_rate  + rss / 2
-#     curr$tau   = rgamma(1, shape, rate=rate)
+     X = curr$X
+     p = curr$p
+
+     var_hat   = solve(theta_prec + curr$tau * t(X) %*% X)
+     theta_hat = var_hat %*% (theta_prec %*% theta_0 + curr$tau * t(X) %*% p)
+
+     # now, to do the sampling we need to iterate over the columns of theta_hat
+     # as it is a matrix
+     for (j in 1:ncol(curr$theta))
+       curr$theta[,j] = mvrnorm(1, theta_hat[,j], var_hat)
+
+     # 2. Sample tau
+     #
+     # prior tau ~ Gamma(tau_shape, tau_rate)
+     #
+     # posterior will be (tau_shape + n/2, tau_rate + (p - X theta)'(p - X theta)/2)
+     e = p - X %*% curr$theta
+     rss = sum(e^2)
+
+     n     = nrow(p)*ncol(p)
+     shape = tau_shape + n / 2
+     rate  = tau_rate  + rss / 2
+     curr$tau   = rgamma(1, shape, rate=rate)
   }
   curr
 }
 
-update_p = function(curr, humans, phi) {
+log_lik_full = function(humans, phi, p) {
+  ll = numeric(length(humans))
+  for (i in 1:length(humans)) {
+    ll[i] = log_lik(humans[[i]], phi, p[i,])
+  }
+  ll
+}
+
+# non-hierarchical update for theta
+update_theta = function(curr, humans, phi) {
+
+  # proposal distribution
+  theta_proposal_sigma = 2
+
+  # prior distribution
+  theta_0    = matrix(0, nrow(curr$theta), ncol(curr$theta))
+  theta_prec = diag(0.1, nrow(curr$theta)) # same prior across all sources
+
+  # in this updater, p is just X %*% theta
+
+  # for each coefficient, sampled at random
+  rows = sample(nrow(curr$theta))
+  for (i in rows) {
+
+    # for each source, sampled at random
+    cols = sample(ncol(curr$theta))
+    for (j in cols) {
+      # update theta[i,j] with RWMH
+      theta = curr$theta
+      theta[i,j] = rnorm(1, curr$theta[i,j], theta_proposal_sigma)
+      # compute new p
+      p = curr$X %*% theta
+
+      # proposal ratio is symmetric, so need only the prior ratio
+      t0_prop = theta[,j]      - theta_0[,j]
+      t0_curr = curr$theta[,j] - theta_0[,j]
+      # exp(-0.5*(t(t0_prop) %*% theta_prec %*% t0_prop)) / exp(-0.5*(t(t0_curr) %*% theta_prec %*% t0_curr))
+
+      log_hastings_ratio = -0.5*(t(t0_prop) %*% theta_prec %*% t0_prop -
+                                 t(t0_curr) %*% theta_prec %*% t0_curr)
+
+      # compute likelihood ratio.
+      # (partial log-likelihood could be used here, as we need only update
+      #  the pattern affected by the theta that was changed. However, this is
+      #  probably more cumbersome to compute, so we instead just update
+      #  the entire p)
+
+      log_likelihood = log_lik_full(humans, phi, p)
+      log_likelihood_ratio = sum(log_likelihood - curr$log_likelihood)
+
+      # accept/reject
+      log_alpha = log_likelihood_ratio + log_hastings_ratio
+      if (log_alpha > 0 || runif(1) < exp(log_alpha)) {
+        # accept new values, copy to old
+        curr$p[,j] = p[,j]
+        curr$theta[i,j] = theta[i,j]
+        curr$log_likelihood = log_likelihood
+        curr$accept = curr$accept + 1
+      } else {
+        curr$reject = curr$reject + 1
+      }
+    }
+  }
+  return(curr)
+}
+
+update_ranef = function(curr, humans, phi) {
 
   # proposal distribution
   p_proposal_sigma = 2
@@ -275,15 +352,6 @@ update_p = function(curr, humans, phi) {
       # prior ratio
       # p[1] - mu[1] ~ Normal(0, tau)
       log_hastings_ratio = -0.5*curr$tau*(en[j]^2 - e[i,j]^2)
-
-      # HACK
-
-#      en = e[i,]
-#      en[j] = rnorm(1, e[i,j], p_proposal_sigma)
-#      en = en - mean(en)
-#      p = mu[i,] + en
-#      log_hastings_ratio = -0.5*curr$tau*sum(p^2 - curr$p[i,]^2)
-      # END HACK
     }
 
     # compute likelihood ratio
@@ -303,6 +371,56 @@ update_p = function(curr, humans, phi) {
     }
   }
   return(curr)
+}
+
+mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinning = 100) {
+
+  # priors
+  logit_p_sigma = 1
+
+  # accept/reject
+  accept_reject = numeric(2)
+
+  # posterior
+  posterior = list()
+
+  #' parameter vector
+  n_sources = ncol(phi)
+  theta   = matrix(0, ncol(X), n_sources-1)
+  rownames(theta) <- colnames(X)
+  colnames(theta) <- colnames(phi)[-n_sources]
+
+  #' initialise p
+  p = matrix(0, nrow(X), n_sources-1)
+
+  #' compute log-likelihood for each covariate pattern
+  log_likelihood = numeric(length(humans))
+  for (x in seq_along(humans)) {
+    log_likelihood[x] = log_lik(humans[[x]], phi, p[x,])
+  }
+
+  # storage for the current iteration
+  curr = list(p = p, X = X, t = NULL, theta = theta, tau = NULL, rho = NULL, log_likelihood = log_likelihood, accept=0, reject=0)
+
+  # main MCMC loop
+  post_i = 0;
+  for (i in seq_len(iterations+burnin)) {
+
+    # update the theta's + p's
+    curr = update_theta(curr, humans, phi)
+
+    # sample
+    if (i %% 1000 == 0) {
+      cat("Up to iteration", i, "of", burnin + iterations, "\n")
+    }
+    if (i > burnin && i %% thinning == 0) {
+      post_i = post_i + 1;
+      posterior[[post_i]] = list(p     = curr$p,
+                                 theta = curr$theta)
+    }
+  }
+
+  list(post = posterior, ar = c(curr$accept, curr$reject))
 }
 
 mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
@@ -340,6 +458,7 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   tau     = 1
   rho     = 0
 
+  hierarchical = FALSE
   #' initialise p
   p = matrix(0, nrow(X), n_sources-1)
 
@@ -360,11 +479,16 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   post_i = 0;
   for (i in seq_len(iterations+burnin)) {
 
-    # update priors
-    curr = update_priors(curr)
+    if (hierarchical) {
+      # update priors
+      curr = update_hyper_theta(curr)
 
-    # update the p's
-    curr = update_p(curr, humans, phi)
+      # update the p's
+      curr = update_ranef(curr, humans, phi)
+    } else {
+      # update the theta's + p's
+      curr = update_theta(curr, humans, phi)
+    }
 
     # sample
     if (i %% 1000 == 0) {
