@@ -7,7 +7,7 @@ using namespace Rcpp;
 // run island model
 
 // [[Rcpp::export]]
-List island(IntegerMatrix isolates) {
+List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
   int run = 0;
 
   // convert our isolate matrix to the appropriate format
@@ -27,14 +27,13 @@ List island(IntegerMatrix isolates) {
   double beta  = 1.0;
   double gamma = 1.0;
 
-  int niter = 500;
   int thin  = 50;
-  int seed  = -5;
 
   myutils::Random ran;
   ran.setseed(seed);
 
-  // output traces
+  // output traces. The thin here is how often we sample the evolution parameters.
+  // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
   clust.mcmc6f(alpha, beta, gamma, niter, thin, ran);
 
   // convert our map of output shit into a list
