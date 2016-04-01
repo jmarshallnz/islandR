@@ -168,6 +168,8 @@ void Cluster::precalc() {
 
 void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik1, double lik2, double logalpha, int move, Matrix<double> &traces, int trace_row) {
   int col = 0;
+  if (trace_row >= traces.nrows())
+    return;
   traces[trace_row][col++] = iter;
   for (int i = 0; i < A.nrows(); i++) {
     for (int j = 0; j < A.ncols(); j++)
