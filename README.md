@@ -1,13 +1,15 @@
 # islandR
 
-The islandR package allows source attribution using the island genomic model.
+The islandR package allows source attribution using the island genomic model (and in the future, other
+genomic models).
 
-At the moment, the package encapsulates a genomic data fit to current NZ *Campylobacter jejuni* data and provides posterior
-estimates so that further models can be built without the overhead of the genomic model.
+This allows the attribution of cases of disease to their likely sources.
 
-The genomic model was fit using the genomic_loop branch of https://github.com/jmarshallnz/island
-
-At a later stage, the goal is to perform all source attribution fitting directly (i.e. merge in the island model code).
+The assymmetric island model estimates the sampling distribution of genotypes on sources by using
+the genetic distance between isolates to infer mutation and recombination rates in addition to
+migration rates between sources. This allows improved estimation of the sampling distribution over
+and above that achieved using just the prevalence of each type. Further, it allows estimating the
+likely prevalence of unobserved genotypes.
 
 ## Installation
 
@@ -23,13 +25,28 @@ devtools::install_github("jmarshallnz/islandR")
 ```R
 library(islandR)
 
-# find the number of posterior samples for each type
-samples <- get_num_samples()
+# Take a look at the expected data format using an example dataset
+head(manawatu)
 
-# retrieve the genotypes for which we have attribution results
-isolates <- get_genotypes()
+# Fit the sequence type distribution using the island model
+st = st_fit_island(formula = Source ~ ST,
+                   sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC,
+                   non_primary = "Human",
+                   data = manawatu)
 
-# get the attribution for a particular isolate
-samples <- get_source_probability_sample(genotype=474)
+# see some summaries of these
+summary(st)
+plot(st)
+
+# Fit the attribution model for human cases, estimating separately by location
+mod = attribution(ST ~ Location, st, data=subset(manawatu, Source == "Human"))
+
+# Various model summaries
+summary(mod)
+predict(mod, FUN=mean)
+
+# Posterior predictions including uncertainty
+posterior = predict(mod, FUN=identity)
+boxplot(p ~ interaction(X, Source), data=posterior, "Posterior attribution")
 ```
 
