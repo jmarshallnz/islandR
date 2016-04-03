@@ -1,7 +1,7 @@
-#' Genotype attribution dataset
+#' Example human *Campylobacter jejuni* dataset from the Manawatu, New Zealand
 #'
-#' A dataset containing posterior samples of attribution to sources for a list
-#' of genotypes.
+#' A dataset containing MLST isolates from human and animal sources from the Manawatu,
+#' New Zealand.
 #'
 #' @format A data frame containing attribution information
 #' \describe{
@@ -13,10 +13,9 @@
 #'   \item{PGM}{The PGM housekeeping gene}
 #'   \item{TKT}{The TKT housekeeping gene}
 #'   \item{UNC}{The UNC housekeeping gene}
-#'   \item{Poultry}{The probability the sample is from poultry}
-#'   \item{Ruminants}{The probability the sample is from ruminants}
-#'   \item{Water}{The probability the sample is from environmental water}
-#'   \item{Other}{The probability the sample is from other sources}
-#'   \item{Iteration}{The posterior sample iteration}
+#'   \item{Source}{The source (Human, Poultry, Ruminants, Water, Other)}
+#'   \item{Location}{A factor containing Urban or Rural for each Human case}
+#'   \item{Intervention}{A factor containing before or after for each Human case, specifying whether
+#'   it occurred before or after the 2007-2008 intervention in the Poultry industry}
 #' }
-"genotype_attribution"
+"manawatu"
