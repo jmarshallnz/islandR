@@ -1,3 +1,7 @@
+#' @useDynLib islandR
+#' @importFrom Rcpp sourceCpp
+NULL
+
 #' Fit the sampling distribution of genotypes to sources using the assymmetric island model.
 #' @export
 #' @param formula A formula of the form Genotype ~ Source
