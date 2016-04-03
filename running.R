@@ -105,6 +105,9 @@ summary(x)
 
 predict(x, FUN=mean)
 
+post = predict(x, FUN=identity)
+boxplot(p ~ interaction(X, Source), data=post, "Posterior attribution")
+
 post = x$posterior
 
 # do some plots

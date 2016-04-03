@@ -184,7 +184,9 @@ plot.attribution <- function(x) {
 #' @param newdata a `data.frame` to predict attribution values. Set to NULL to use the reduced model matrix from the fitted model.
 #' @param FUN a function to operate on the posterior attribution, defaults to `median`, use `identity` to retrieve all posterior samples.
 #' @param ... further parameters to pass to FUN
-#' @return the posterior attribution, after operating by the given function
+#' @return a data frame containing the posterior attribution (p), the source (Source), the covariate
+#'         combination (X), and if multiple results are returned from FUN, an additional column named
+#'         after the function call.
 predict.attribution <- function(x, newdata=NULL, FUN=median, ...) {
 
   # generate a model matrix for the new data
@@ -199,47 +201,25 @@ predict.attribution <- function(x, newdata=NULL, FUN=median, ...) {
   pred = .attribution.probabilities(x, model_matrix)
 
   # operate on the prediction(s) using FUN
-  m_pred = lapply(pred, function(x) { apply(x, 2, FUN, ...) })
+  to_matrix <- function(x) {
+    if (is.matrix(x)) {
+      x
+    } else {
+      t(as.matrix(x))
+    }
+  }
+  m_pred = lapply(pred, function(x) { to_matrix(apply(x, 2, FUN, ...)) })
 
   func_name = deparse(substitute(FUN))
 
-  # TODO: THIS IS WAY TOO INEFFICIENT...
-  #       We need a much, much faster way to do this.
-  #       Basically, we need only reshape a 3D array into a long 2D one
-  #       with the source column added (as well as nicer column names)
-  #       There's way more efficient ways to do this I'm sure!!!!
-
-  # we can probably just run simplify2array, permute the result
-  # then convert to a list or something...
-
-  # convert to a data frame
-  to.df <- function(m, func_name) {
-    if (is.matrix(m)) {
-      df = as.data.frame(t(m))
-    } else {
-      df = as.data.frame(as.matrix(m))
-    }
-    df$theta = rownames(df)
-    df2 = reshape(df,
-                  varying=names(df)[-ncol(df)],
-                  v.names = "p",
-                  times=names(df)[-ncol(df)],
-                  timevar=func_name,
-                  direction="long",
-                  idvar="theta")
-    rownames(df2) <- NULL
-    df2
+  m_pred_df = melt(m_pred, varnames=c(func_name, "X"), value.name = "p")
+  names(m_pred_df)[names(m_pred_df) == "L1"] = "Source"
+  # drop func_name column if it is identical
+  if (length(unique(m_pred_df[,func_name])) == 1) {
+    m_pred_df[,func_name] = NULL
   }
 
-  # convert each source info to a long data frames
-  df_pred = lapply(m_pred, to.df, func_name)
-
-  # add the names as a column
-  nm = names(df_pred)
-  df_list = lapply(seq_along(nm), function(i) { df_pred[[i]]$Source = nm[i]; df_pred[[i]] })
-
-  # and row bind them all
-  do.call(rbind, df_list)
+  m_pred_df
 }
 
 #' Retrieve the number of MCMC samples from an attribution object
