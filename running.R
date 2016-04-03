@@ -1,3 +1,30 @@
+# Take a look at the expected data format using an example dataset
+head(manawatu)
+
+# Fit the sequence type distribution using the island model
+st = st_fit_island(formula = Source ~ ST,
+                   sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC,
+                   non_primary = "Human",
+                   data = manawatu)
+
+# see some summaries of these
+summary(st)
+plot(st)
+
+# Fit the attribution model for human cases, estimating separately by location
+mod = attribution(ST ~ Location, st, data=subset(manawatu, Source == "Human"))
+
+# Various model summaries
+summary(mod)
+predict(mod, FUN=mean)
+
+# Posterior predictions including uncertainty
+posterior = predict(mod, FUN=identity)
+boxplot(p ~ interaction(X, Source), data=posterior, "Posterior attribution")
+
+
+# OLD STUFF BELOW HERE...
+
 library(MASS)
 library(stringr)
 library(dplyr)
@@ -5,110 +32,7 @@ library(tidyr)
 library(lubridate)
 library(islandR)
 
-# run the number of cases we want and so on
 
-# options are:
-# 1. Max number of alleles to impute
-# 2. Source list
-# 3. Output folder (defaults to current directory + "out_[imputed]_[sources]")
-
-source_file <- "4_source_imputed"
-
-sources <- read.csv(file.path("running", paste0(source_file, ".csv")), colClasses="character")
-source_map <- as.numeric(sources$Number)
-names(source_map) <- sources$DataSource
-
-source_label_map <- unique(sources %>% dplyr::select(Number, Label))
-source_labels <- str_replace(source_label_map$Label, "\\\\n", "\n")
-names(source_labels) <- source_label_map$Number
-
-# input parameters
-alleles_to_impute <- max(c(suppressWarnings(as.numeric(sources$Imputed)), 0), na.rm=T)
-
-# read human data
-dat = read.csv("data-raw/human_types.csv", stringsAsFactors = FALSE)
-
-
-### OLD STUFF
-# hdat = dat %>%
-#   mutate(Month = month(as.Date(Sampled.Date)), YearMonth = Month + (Year-2005)*12) %>%
-#   filter(Source == "Human", Year >= 2005, Year <= 2014)
-#
-#
-# hdat = hdat %>% dplyr::select(ST, UR_bool, YearMonth) %>% group_by(ST, UR_bool, YearMonth) %>% summarise(Number=n())
-#
-# sts_available = get_genotypes()$ST
-# hdat$ST = match(hdat$ST, sts_available)
-#
-# n_times = 120
-# n_loc   = 2
-#
-# x0 = expand.grid(Time = 1:n_times, Loc = 0:(n_loc-1))
-# x0$Season = as.factor((x0$Time - 1) %% 12 + 1)
-# x0$Intervention = as.factor(ifelse(x0$Time > 12, 1, 0))
-# x0$Loc = as.factor(x0$Loc)
-#
-# formula = ~ Season*Intervention*Loc
-#
-# # TODO: Ideally hum would be generated from humans + the model matrix.
-# #       i.e. for each row of model matrix, find corresponding human cases and produce
-# #            the list
-# hum <- list()
-# count   = 0;
-# loc_unique = na.omit(unique(hdat$UR_bool))
-# for (j in 1:n_loc) {
-#   for (i in 1:n_times) {
-#     count = count + 1;
-#     sts = hdat %>% filter(UR_bool == loc_unique[j], YearMonth == i) %>% ungroup %>% dplyr::select(ST, Number)
-#     hum[[count]] = as.matrix(sts)
-#   }
-# }
-
-# right, combine a bunch of sources together and fit to the sources
-animals = dat %>% filter(Source != "Human") %>% mutate(Source = as.character(source_labels[as.character(source_map[Source])]))
-comb_dat = rbind(animals, dat %>% filter(Source == "Human"))
-
-# fit the sequence type distribution using the island model
-st = st_fit_island(formula = Source ~ ST,
-                   sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC,
-                   non_primary = "Human",
-                   data = comb_dat)
-
-
-# RIGHT, NOW ALTER THIS AS NEEDED.
-# Basically we need to alter the human bit to take the human data frame (suitably filtered)
-# and the formula, and produce our covariate list (or something like it)
-# in fact, if we have an additional map from human types to sample types I think that will
-# suffice? i.e. something like:
-# 1. A matrix mapping STs to their corresponding index
-#    NOTE: This basically handles the list -> index in phi lookup
-# 2. A design matrix mapping cases to covariate patterns.
-#    NOTE: This isn't particularly efficient, as any change in covariate
-#          needs to regenerate this, and compute the likelihood across all cases,
-#          rather than just across the subset that are affected by the change.
-#          This will slow things down a bit, but how much?
-#
-#          Because of this, we'll instead use a map of humans to covariate pattern. i.e.
-#           1. Compute full design matrix.
-#           2. Iterate over the rows to form a unique version thereof (i.e. reduce to unique
-#              covariate patterns)
-#           3. Combine up the ST counts accordingly.
-
-# Pull out the human data
-humans = dat %>%
-  mutate(Month = month(as.Date(Sampled.Date)), YearMonth = Month + (Year-2005)*12) %>%
-  filter(Source == "Human", Year >= 2005, Year <= 2014)
-
-x = attribution(ST ~ UR_bool, st, data=humans)
-
-summary(x)
-
-predict(x, FUN=mean)
-
-post = predict(x, FUN=identity)
-boxplot(p ~ interaction(X, Source), data=post, "Posterior attribution")
-
-post = x$posterior
 
 # do some plots
 par(mfrow=c(3,1))
