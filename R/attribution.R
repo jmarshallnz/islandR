@@ -1,3 +1,6 @@
+#' @importFrom reshape2 melt
+NULL
+
 #' Attribute cases to sources via MCMC
 #' @export
 #' @param formula A formula of the form `GenoType ~ Covariates` for cases
@@ -212,7 +215,7 @@ predict.attribution <- function(x, newdata=NULL, FUN=median, ...) {
 
   func_name = deparse(substitute(FUN))
 
-  m_pred_df = melt(m_pred, varnames=c(func_name, "X"), value.name = "p")
+  m_pred_df = reshape2::melt(m_pred, varnames=c(func_name, "X"), value.name = "p")
   names(m_pred_df)[names(m_pred_df) == "L1"] = "Source"
   # drop func_name column if it is identical
   if (length(unique(m_pred_df[,func_name])) == 1) {
