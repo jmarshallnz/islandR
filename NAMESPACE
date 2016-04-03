@@ -1,3 +1,2 @@
-exportPattern("^[[:alpha:]]+")
 useDynLib(islandR)
 importFrom(Rcpp, sourceCpp)
