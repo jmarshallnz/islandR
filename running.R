@@ -99,7 +99,12 @@ humans = dat %>%
   mutate(Month = month(as.Date(Sampled.Date)), YearMonth = Month + (Year-2005)*12) %>%
   filter(Source == "Human", Year >= 2005, Year <= 2014)
 
-x = attribution(ST ~ 1, st, data=humans)
+x = attribution(ST ~ UR_bool, st, data=humans)
+
+summary(x)
+
+predict(x, FUN=mean)
+
 post = x$posterior
 
 # do some plots

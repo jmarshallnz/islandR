@@ -67,7 +67,7 @@ attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1
   post = NULL
   ar = c(0,0)
   for (i in seq_len(iterations(sampling_dist))) {
-    cat("Performing iteration", i, "of", iters, "\n")
+    cat("Performing iteration", i, "of", iterations(sampling_dist), "\n")
     iter = mcmc_no_ar1(y, reduced.matrix, sampling_dist$sampling_distribution[,,i], iterations, burnin, thinning)
     post = c(post, iter$post)
     ar = ar + iter$ar
@@ -91,14 +91,14 @@ print.attribution <- function(x) {
   cat("Attribution of cases\n")
   cat("====================\n")
   cat("Formula:", deparse(x$formula), "\n")
-  cat("Cases:", sum(simplify2array(lapply(y, function(x) { sum(x[,2]) }))), "\n")
+  cat("Cases:", sum(simplify2array(lapply(x$cases, function(x) { sum(x[,2]) }))), "\n")
   cat("Iterations:", length(x$posterior), "\n")
   cat("Sources:", paste(x$genotype_data$sources, collapse=", "), "\n")
 }
 
-.attribution.probabilities <- function(x) {
+.attribution.probabilities <- function(x, model_matrix) {
 
-  X = x$model_matrix
+  X = model_matrix
   post_theta = get_var(x$posterior, "theta")
 
   p_pred = list()
@@ -122,36 +122,124 @@ print.attribution <- function(x) {
 
 #' Retrieve a summary of an attribution object
 #' @export
-#' @param x An object of class `attribution`
+#' @param x an object of class `attribution`, usually, a result of a call to `attribution`
 summary.attribution <- function(x) {
 
-  theta = get_var(x$posterior, "theta")
+  theta = simplify2array(lapply(x$posterior, function(x) { x$theta }))
 
-  j = 1
-  theta = simplify2array(lapply(x$posterior, function(x) { x$theta[,j] }))
+  # NOTE: These likely have too large a range to be able to say
+  #       with any confidence that we have differences.
+  #       This is because they're capturing the variation of the
+  #       baseline source. i.e. we can add a constant to each row
+  #       of theta, and then add that constant to 0 and we'll get the same
+  #       probabilities... So can we maybe try and find an a for each
+  #       iteration that makes sum(1 + e^theta) constant?
+  # e^a e^0, e^a e^t1, e^a e^t2, e^a e^t3
+ # etheta = apply(theta, c(1,3), function(x) { log(sum(exp(x)+1)) })
+#  etheta_med = apply(etheta, 1, mean)
+#  etheta_scale = sweep(etheta, 1, etheta_med, "-")
+  # now get rid of this out of theta
+#  thetahat = sweep(theta, c(1,3), etheta_scale, "-")
+#  med = apply(thetahat, 1:2, quantile, c(0.50, 0.05, 0.95))
+  # doesn't seem to really help much though!
 
-  med = apply(theta, 1:2, median)
-  lci = apply(theta, 1:2, quantile, 0.05)
-  uci = apply(theta, 1:2, quantile, 0.95)
+  med = apply(theta, 1:2, quantile, c(0.50, 0.05, 0.95))
 
-  # length of post_theta is the number of sources-1
-  med = lapply(theta, function(x) { apply(x, 2, median) })
-  lci = lapply(theta, function(x) { apply(x, 2, quantile, 0.05) })
-  uci = lapply(theta, function(x) { apply(x, 2, quantile, 0.95) })
+  split.along.dim <- function(a, n)
+    setNames(lapply(split(a, arrayInd(seq_along(a), dim(a))[, n]),
+                    array, dim = dim(a)[-n], dimnames(a)[-n]),
+             dimnames(a)[[n]])
 
-  s = sprintf("%02.2f (%02.2f, %02.2f)", med, lci, uci)
-  names(s) = names(med)
-  sh = matrix(s, ncol=3)
-  colnames(sh) = names(med)
-  print(s)
+  summ = list(summ = lapply(split.along.dim(med, 3), t),
+              baseline = x$genotype_data$sources[length(x$genotype_data$sources)],
+              n = sum(simplify2array(lapply(x$cases, function(x) { sum(x[,2]) }))))
+  class(summ) = "summary.attribution"
+  summ
+}
 
+#' Print a summary of an attribution object
+#' @export
+#' @param x an object of class `summary.attribution`, usually, a result of a call to `summary.attribution`
+print.summary.attribution = function(x) {
+  cat("Attribution model fit: Posterior quantiles\n")
+  cat("==========================================\n")
+  cat("n =", x$n, "\n\n")
+  cat("Baseline:", x$baseline, "\n\n")
+  snames = names(x$summ)
+  lapply(seq_along(snames), function(i, y) { cat(snames[i], ":\n", sep=""); print(y[[i]]); cat("\n") }, x$summ)
 }
 
 #' Plot an attribution object
 #' @export
 #' @param x An object of class `attribution`
 plot.attribution <- function(x) {
-  # hmm, what is a useful plot?
+  # hmm, what is a useful plot? I guess posterior predictions for each
+  # combination of covariates?
+  print("Not currently implemented")
+}
+
+#' Predict attribution on a new data set
+#' @export
+#' @param x an object of class `attribution`, usually a result of a call to `attribution`.
+#' @param newdata a `data.frame` to predict attribution values. Set to NULL to use the reduced model matrix from the fitted model.
+#' @param FUN a function to operate on the posterior attribution, defaults to `median`, use `identity` to retrieve all posterior samples.
+#' @param ... further parameters to pass to FUN
+#' @return the posterior attribution, after operating by the given function
+predict.attribution <- function(x, newdata=NULL, FUN=median, ...) {
+
+  # generate a model matrix for the new data
+  if (missing(newdata) || is.null(newdata)) {
+    model_matrix = x$model_matrix
+  } else {
+    Terms = delete.response(terms(x$formula))
+    model_matrix = model.matrix(Terms, newdata)
+  }
+
+  # get prediction
+  pred = .attribution.probabilities(x, model_matrix)
+
+  # operate on the prediction(s) using FUN
+  m_pred = lapply(pred, function(x) { apply(x, 2, FUN, ...) })
+
+  func_name = deparse(substitute(FUN))
+
+  # TODO: THIS IS WAY TOO INEFFICIENT...
+  #       We need a much, much faster way to do this.
+  #       Basically, we need only reshape a 3D array into a long 2D one
+  #       with the source column added (as well as nicer column names)
+  #       There's way more efficient ways to do this I'm sure!!!!
+
+  # we can probably just run simplify2array, permute the result
+  # then convert to a list or something...
+
+  # convert to a data frame
+  to.df <- function(m, func_name) {
+    if (is.matrix(m)) {
+      df = as.data.frame(t(m))
+    } else {
+      df = as.data.frame(as.matrix(m))
+    }
+    df$theta = rownames(df)
+    df2 = reshape(df,
+                  varying=names(df)[-ncol(df)],
+                  v.names = "p",
+                  times=names(df)[-ncol(df)],
+                  timevar=func_name,
+                  direction="long",
+                  idvar="theta")
+    rownames(df2) <- NULL
+    df2
+  }
+
+  # convert each source info to a long data frames
+  df_pred = lapply(m_pred, to.df, func_name)
+
+  # add the names as a column
+  nm = names(df_pred)
+  df_list = lapply(seq_along(nm), function(i) { df_pred[[i]]$Source = nm[i]; df_pred[[i]] })
+
+  # and row bind them all
+  do.call(rbind, df_list)
 }
 
 #' Retrieve the number of MCMC samples from an attribution object
