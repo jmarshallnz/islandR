@@ -1,4 +1,5 @@
-library(MASS)
+#' @importFrom MASS mvrnorm
+NULL
 
 # Log-likelihood function
 log_lik_R = function(humans, phi, p) {

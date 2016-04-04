@@ -13,6 +13,7 @@ LazyData: TRUE
 LinkingTo: Rcpp
 Imports:
     Rcpp,
+    reshape2,
     MASS
 URL: http://github.com/jmarshallnz/islandR
 RoxygenNote: 5.0.1
