@@ -251,7 +251,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	for(i=0;i<proprob.size();i++) proprob[i] /= tot;
 
 	double sigma_a = 0.5;							//	factor for normal proposal in MH change of a (case 1)
-	double sigma_f = 0.5;							//	factor for normal proposal in MH change of f (case 3)
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
@@ -264,9 +263,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	Rcpp::Rcout << "Done 0 of " << niter << " iterations";
 
 	mydouble newlik, logalpha;
-	int iter, fiter, move, ctr = 0;
-	const int fniter = 20000;
-	const int fburnin = 10000;
+	int iter, move;
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = MAX((int)floor((double)niter/100.),1);
 	for(iter=0;iter<niter+burnin;iter++) {
@@ -279,7 +276,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			/* Compute likelihood of human isolate from each source */
 		  Matrix<double> phi(human.nrows(), ng);
 		  {
-			  int j;
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {

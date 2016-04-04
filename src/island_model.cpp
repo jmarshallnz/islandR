@@ -8,7 +8,6 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
-  int run = 0;
 
   // convert our isolate matrix to the appropriate format
   myutils::Matrix<int> iso(isolates.nrow(), isolates.ncol());
