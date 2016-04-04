@@ -8,11 +8,6 @@
 using namespace myutils;
 
 mydouble Cluster::known_source_lik6_composite(Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
-#if defined(_MODEL4)
-	return known_source_lik4_composite(a,b);
-#elif defined(_FLAT_LIKELIHOOD)
-	return mydouble(1.0);
-#endif
 	int i,j,ii,jj,l;
 	mydouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
@@ -71,11 +66,6 @@ mydouble Cluster::known_source_lik6_composite(Matrix<double> &a, Matrix< Vector<
 }
 
 mydouble Cluster::likHi6(const int id, const int i, Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
-#if defined(_MODEL4)
-	return likHi4(id,i,a,b);
-#elif defined(_FLAT_LIKELIHOOD)
-	return mydouble(1.0);
-#endif
 	int ii,jj,l;
 /// NOTE: Little a in this function is A everywhere else!!!
 
