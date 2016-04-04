@@ -29,10 +29,11 @@ library(islandR)
 head(manawatu)
 
 # Fit the sequence type distribution using the island model
-st = st_fit_island(formula = Source ~ ST,
-                   sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC,
-                   non_primary = "Human",
-                   data = manawatu)
+st = st_fit(formula = Source ~ ST,
+            non_primary = "Human",
+            data = manawatu,
+            method="island",
+            sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC)
 
 # see some summaries of these
 summary(st)

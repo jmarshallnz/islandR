@@ -1,3 +1,17 @@
+#' Fit the sampling distribution of genotypes to sources using different models.
+#' @export
+#' @param formula A formula of the form Genotype ~ Source
+#' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
+#'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
+#' @param method the method to use to fit the genotype distribution. Only \code{"island"} is supported currently.
+#' @param data optional data frame from which to take variables in \code{formula}.
+#' @return an object derived from class sampling_dist.
+#' @seealso \code{\link{st_fit_island}}, \code{\link{sampling_dist.print}}, \code{\link{sampling_dist.plot}}, \code{\link{sampling_dist.summary}}
+st_fit <- function(formula, non_primary = "Human", method="island", data, ...) {
+  type <- match.arg(method)
+  switch(type,
+         island = st_fit_island(formula=formula, non_primary=non_primary, data=data, ...))
+}
 
 #' Print a sample_dist object
 #' @export
