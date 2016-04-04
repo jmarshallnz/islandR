@@ -4,10 +4,12 @@
 \alias{print.sample_dist}
 \title{Print a sample_dist object}
 \usage{
-\method{print}{sample_dist}(x)
+\method{print}{sample_dist}(x, ...)
 }
 \arguments{
 \item{x}{sample_dist object to print}
+
+\item{...}{further parameters supplied to the print function}
 }
 \description{
 Print a sample_dist object

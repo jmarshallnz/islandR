@@ -89,8 +89,9 @@ attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1
 
 #' Print an overview of an attribution object
 #' @export
-#' @param x An object of class `attribution`
-print.attribution <- function(x) {
+#' @param x an object of class `attribution`
+#' @param ... further parameters passed to base print functions
+print.attribution <- function(x, ...) {
   cat("Attribution of cases\n")
   cat("====================\n")
   cat("Formula:", deparse(x$formula), "\n")
@@ -125,10 +126,11 @@ print.attribution <- function(x) {
 
 #' Retrieve a summary of an attribution object
 #' @export
-#' @param x an object of class `attribution`, usually, a result of a call to `attribution`
-summary.attribution <- function(x) {
+#' @param object an object of class `attribution`, usually, a result of a call to `attribution`
+#' @param ... further parameters passed to summary functions
+summary.attribution <- function(object, ...) {
 
-  theta = simplify2array(lapply(x$posterior, function(x) { x$theta }))
+  theta = simplify2array(lapply(object$posterior, function(x) { x$theta }))
 
   # NOTE: These likely have too large a range to be able to say
   #       with any confidence that we have differences.
@@ -154,8 +156,8 @@ summary.attribution <- function(x) {
              dimnames(a)[[n]])
 
   summ = list(summ = lapply(split.along.dim(med, 3), t),
-              baseline = x$genotype_data$sources[length(x$genotype_data$sources)],
-              n = sum(simplify2array(lapply(x$cases, function(x) { sum(x[,2]) }))))
+              baseline = object$genotype_data$sources[length(object$genotype_data$sources)],
+              n = sum(simplify2array(lapply(object$cases, function(x) { sum(x[,2]) }))))
   class(summ) = "summary.attribution"
   summ
 }
@@ -163,7 +165,8 @@ summary.attribution <- function(x) {
 #' Print a summary of an attribution object
 #' @export
 #' @param x an object of class `summary.attribution`, usually, a result of a call to `summary.attribution`
-print.summary.attribution = function(x) {
+#' @param ... further parameters passed to base print functions
+print.summary.attribution = function(x, ...) {
   cat("Attribution model fit: Posterior quantiles\n")
   cat("==========================================\n")
   cat("n =", x$n, "\n\n")
@@ -175,7 +178,8 @@ print.summary.attribution = function(x) {
 #' Plot an attribution object
 #' @export
 #' @param x An object of class `attribution`
-plot.attribution <- function(x) {
+#' @param ... further parameters passed to lower-level plot commands.
+plot.attribution <- function(x, ...) {
   # hmm, what is a useful plot? I guess posterior predictions for each
   # combination of covariates?
   print("Not currently implemented")
@@ -183,25 +187,25 @@ plot.attribution <- function(x) {
 
 #' Predict attribution on a new data set
 #' @export
-#' @param x an object of class `attribution`, usually a result of a call to `attribution`.
+#' @param object an object of class `attribution`, usually a result of a call to `attribution`.
 #' @param newdata a `data.frame` to predict attribution values. Set to NULL to use the reduced model matrix from the fitted model.
 #' @param FUN a function to operate on the posterior attribution, defaults to `median`, use `identity` to retrieve all posterior samples.
 #' @param ... further parameters to pass to FUN
 #' @return a data frame containing the posterior attribution (p), the source (Source), the covariate
 #'         combination (X), and if multiple results are returned from FUN, an additional column named
 #'         after the function call.
-predict.attribution <- function(x, newdata=NULL, FUN=median, ...) {
+predict.attribution <- function(object, newdata=NULL, FUN=median, ...) {
 
   # generate a model matrix for the new data
   if (missing(newdata) || is.null(newdata)) {
-    model_matrix = x$model_matrix
+    model_matrix = object$model_matrix
   } else {
-    Terms = delete.response(terms(x$formula))
+    Terms = delete.response(terms(object$formula))
     model_matrix = model.matrix(Terms, newdata)
   }
 
   # get prediction
-  pred = .attribution.probabilities(x, model_matrix)
+  pred = .attribution.probabilities(object, model_matrix)
 
   # operate on the prediction(s) using FUN
   to_matrix <- function(x) {

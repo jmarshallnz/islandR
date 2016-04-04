@@ -4,10 +4,12 @@
 \alias{print.attribution}
 \title{Print an overview of an attribution object}
 \usage{
-\method{print}{attribution}(x)
+\method{print}{attribution}(x, ...)
 }
 \arguments{
-\item{x}{An object of class `attribution`}
+\item{x}{an object of class `attribution`}
+
+\item{...}{further parameters passed to base print functions}
 }
 \description{
 Print an overview of an attribution object

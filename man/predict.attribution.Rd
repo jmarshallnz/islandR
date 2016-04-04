@@ -4,10 +4,10 @@
 \alias{predict.attribution}
 \title{Predict attribution on a new data set}
 \usage{
-\method{predict}{attribution}(x, newdata = NULL, FUN = median, ...)
+\method{predict}{attribution}(object, newdata = NULL, FUN = median, ...)
 }
 \arguments{
-\item{x}{an object of class `attribution`, usually a result of a call to `attribution`.}
+\item{object}{an object of class `attribution`, usually a result of a call to `attribution`.}
 
 \item{newdata}{a `data.frame` to predict attribution values. Set to NULL to use the reduced model matrix from the fitted model.}
 

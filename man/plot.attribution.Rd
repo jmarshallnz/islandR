@@ -4,10 +4,12 @@
 \alias{plot.attribution}
 \title{Plot an attribution object}
 \usage{
-\method{plot}{attribution}(x)
+\method{plot}{attribution}(x, ...)
 }
 \arguments{
 \item{x}{An object of class `attribution`}
+
+\item{...}{further parameters passed to lower-level plot commands.}
 }
 \description{
 Plot an attribution object

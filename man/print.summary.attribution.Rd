@@ -4,10 +4,12 @@
 \alias{print.summary.attribution}
 \title{Print a summary of an attribution object}
 \usage{
-\method{print}{summary.attribution}(x)
+\method{print}{summary.attribution}(x, ...)
 }
 \arguments{
 \item{x}{an object of class `summary.attribution`, usually, a result of a call to `summary.attribution`}
+
+\item{...}{further parameters passed to base print functions}
 }
 \description{
 Print a summary of an attribution object

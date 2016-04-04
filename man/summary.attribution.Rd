@@ -4,10 +4,12 @@
 \alias{summary.attribution}
 \title{Retrieve a summary of an attribution object}
 \usage{
-\method{summary}{attribution}(x)
+\method{summary}{attribution}(object, ...)
 }
 \arguments{
-\item{x}{an object of class `attribution`, usually, a result of a call to `attribution`}
+\item{object}{an object of class `attribution`, usually, a result of a call to `attribution`}
+
+\item{...}{further parameters passed to summary functions}
 }
 \description{
 Retrieve a summary of an attribution object

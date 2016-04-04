@@ -4,10 +4,12 @@
 \alias{plot.sample_dist}
 \title{Produce a summary plot (stacked barplot) of posterior means}
 \usage{
-\method{plot}{sample_dist}(x)
+\method{plot}{sample_dist}(x, ...)
 }
 \arguments{
 \item{x}{sample_dist object to plot}
+
+\item{...}{further parameters supplied to plot}
 }
 \description{
 Produce a summary plot (stacked barplot) of posterior means
