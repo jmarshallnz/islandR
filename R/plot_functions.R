@@ -45,37 +45,3 @@ plot_density = function(post, variable, prior_fun) {
     }
   }
 }
-
-get_pred = function(post, x, formula) {
-
-  # design matrix
-  X = model.matrix(formula, data=x)
-
-  # get the prediction
-  post_theta = get_var(post, "theta")
-
-  p_pred = list()
-  for (j in seq_along(post_theta)) {
-    p_pred[[j]] = t(exp(X %*% t(post_theta[[j]])))
-    colnames(p_pred[[j]])
-  }
-  p_pred[[length(p_pred)+1]] = matrix(1, nrow(p_pred[[1]]), ncol(p_pred[[1]]))
-
-  p_sum = matrix(0, nrow(p_pred[[1]]), ncol(p_pred[[1]]))
-  for (j in seq_along(p_pred)) {
-    p_sum = p_sum + p_pred[[j]]
-  }
-  for (j in seq_along(p_pred)) {
-    p_pred[[j]] = p_pred[[j]] / p_sum
-  }
-
-  # assemble the data in the middle (i.e. filter out the extremes)
-  for (j in seq_along(p_pred)) {
-    p_max = apply(p_pred[[j]], 2, quantile, 0.975)
-    p_min = apply(p_pred[[j]], 2, quantile, 0.025)
-    d = cbind(x, p_max, p_min, t(p_pred[[j]]))
-    d2 = gather(d, Iteration, Proportion, matches("[0-9]+"))
-    p_pred[[j]] = d2 %>% filter(Proportion > p_min, Proportion < p_max)
-  }
-  return(p_pred)
-}
