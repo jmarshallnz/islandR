@@ -7,8 +7,6 @@
 #ifndef _MYUTILS_H_
 #define _MYUTILS_H_
 
-#pragma warning(disable: 4786)
-
 #include "myerror.h"
 #include "utils.h"
 #include "vector.h"
