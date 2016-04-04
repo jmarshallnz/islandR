@@ -10,6 +10,7 @@ NULL
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
 #' @param iters the number of iterations to sample. An additional burnin period of 10% of this value will be used, and
 #'        100 samples will be taken (or every sample, whichever is smaller).
+#' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class island which derives from sampling_dist.
 #' @seealso sampling_dist.print, sampling_dist.plot, sampling_dist.summary
 st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 10000, data) {

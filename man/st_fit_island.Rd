@@ -17,6 +17,8 @@ but P(ST | source) will be computed for these STs in addition to those observed 
 
 \item{iters}{the number of iterations to sample. An additional burnin period of 10% of this value will be used, and
 100 samples will be taken (or every sample, whichever is smaller).}
+
+\item{data}{optional data frame from which to take variables in \code{formula} and \code{sequence}.}
 }
 \value{
 an object of class island which derives from sampling_dist.
