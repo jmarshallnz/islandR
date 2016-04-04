@@ -385,16 +385,16 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   # posterior
   posterior = list()
 
-  #' parameter vector
+  # parameter vector
   n_sources = ncol(phi)
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
   colnames(theta) <- colnames(phi)[-n_sources]
 
-  #' initialise p
+  # initialise p
   p = matrix(0, nrow(X), n_sources-1)
 
-  #' compute log-likelihood for each covariate pattern
+  # compute log-likelihood for each covariate pattern
   log_likelihood = numeric(length(humans))
   for (x in seq_along(humans)) {
     log_likelihood[x] = log_lik(humans[[x]], phi, p[x,])
@@ -426,7 +426,7 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
 
 mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
 
-  #' MCMC parameters
+  # MCMC parameters
   thinning   = 100
 
   # priors
@@ -438,15 +438,15 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   # posterior
   posterior = list()
 
-  #' time column (in case time is important)
+  # time column (in case time is important)
   t = x$Time
 
-  #' design matrix
+  # design matrix
   if (is.null(x))
     x = data.frame(dummy=1)
   X = model.matrix(formula, data=x)
 
-  #' parameter vector
+  # parameter vector
   n_sources = ncol(phi)
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
@@ -455,19 +455,19 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
 #  theta   = matrix(0, ncol(X), n_sources)
   ## ENDHACK
 
-  #' precision, auto-correlation
+  # precision, auto-correlation
   tau     = 1
   rho     = 0
 
   hierarchical = FALSE
-  #' initialise p
+  # initialise p
   p = matrix(0, nrow(X), n_sources-1)
 
   ## HACK
 #  p = matrix(0, nrow(X), n_sources)
   ## ENDHACK
 
-  #' compute log-likelihood for each covariate pattern
+  # compute log-likelihood for each covariate pattern
   log_likelihood = numeric(length(humans))
   for (x in seq_along(humans)) {
     log_likelihood[x] = log_lik(humans[[x]], phi, p[x,])
