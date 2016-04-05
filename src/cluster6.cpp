@@ -7,11 +7,11 @@
 
 using namespace myutils;
 
-double Cluster::known_source_loglik(const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
+double Cluster::known_source_loglik(const Matrix<double> &A, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
 	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
-		double punique = a[i][ng];
+		double punique = A[i][ng];
 		for (int j = 0; j < nST[i]; j++) {
 			double ncopiesj = ABUN[i][j];
 			std::vector<double> psame(nloc);
@@ -20,8 +20,8 @@ double Cluster::known_source_loglik(const Matrix<double> &a, const Matrix< Vecto
 				int allele = MLST[i][j][l];
 				double ac = acount[i][l][allele];
 				double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-				double bk = b[i][l][allele] - a[i][i]*ac + a[i][i]*ac_;
-				double b_ = r[i][0] * bk + r[i][1] * (1.0-a[i][ng]);// if no rec then must be same as CF (barring mutation)
+				double bk = b[i][l][allele] - A[i][i]*ac + A[i][i]*ac_;
+				double b_ = r[i][0] * bk + r[i][1] * (1.0-A[i][ng]);// if no rec then must be same as CF (barring mutation)
 				if(fabs(b_)<1.0e-7) {
 					b_ = 0.0;
 				}
@@ -36,7 +36,7 @@ double Cluster::known_source_loglik(const Matrix<double> &a, const Matrix< Vecto
 			double l_j = 0.0;
 			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
 				double l_ii = 0.0;
-				double mii = a[i][ii]/(1.0-a[i][ng]);
+				double mii = A[i][ii]/(1.0-A[i][ng]);
 				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
 					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-MIN(ABUN[ii][jj],1.0)
 						: ABUN[ii][jj];
@@ -456,14 +456,14 @@ void Cluster::calc_Ri(Matrix<mydouble> &r, Matrix<double> &R, const int i) {
   for(j=0;j<n;j++) R[i][j] = (r[i][j]/r[i][n]).todouble();
 }
 
-void Cluster::recalc_b(Matrix<double> &a, Matrix< Vector<double> > &b) {
+void Cluster::recalc_b(Matrix<double> &A, Matrix< Vector<double> > &b) {
   int i,j,k,l;
   for(i=0;i<ng;i++) {
     for(j=0;j<nloc;j++) {
       for(k=0;k<acount[i][j].size();k++) {
         b[i][j][k] = 0.0;
         for(l=0;l<ng;l++) {
-          b[i][j][k] += acount[l][j][k] * a[i][l];
+          b[i][j][k] += acount[l][j][k] * A[i][l];
           //					bk[i][j][k] += (acount[l][j][k]*(double)size[l]-1.0)/(double)(size[l]-1) * a[i][l];
         }
       }
