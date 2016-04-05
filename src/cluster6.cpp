@@ -224,8 +224,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	calc_R(r[use],R[use]);
 
 	/* Storage for likelihoods */
-	mydouble likelihood;
-	likelihood.setlog(known_source_loglik(A[use],b[use],R[use]));
+	double loglikelihood = known_source_loglik(A[use],b[use],R[use]);
 
 	/* Proposal probabilities */
 	Vector<double> proprob(6,0.0);
@@ -243,14 +242,13 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	/* Trace output matrix */
 	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+4); // iter, A, r, loglik, loglik2, logalpha, move
 	int trace_row = 0;
-	append_traces(0, A[use], R[use], likelihood.LOG(), likelihood.LOG(), 0, NAN, evolution_traces, trace_row++);
+	append_traces(0, A[use], R[use], loglikelihood, loglikelihood, 0, NAN, evolution_traces, trace_row++);
 
 	clock_t start = clock(), current;
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 	Rcpp::Rcout << "Done 0 of " << niter << " iterations";
 
-	mydouble newlik, logalpha;
-	int iter, move;
+	int iter;
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = MAX((int)floor((double)niter/100.),1);
 	for(iter=0;iter<niter+burnin;iter++) {
@@ -274,9 +272,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			human_likelihoods[iter] = phi;
 		}
 		else {
-			newlik = likelihood;
-			logalpha = 1;
-			move = multinom(proprob,ran);			//	random sweep for proposing moves
+			int move = multinom(proprob,ran);			//	random sweep for proposing moves
 			switch(move) {
 				case 0:	{// update A: switching proposal
 					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
@@ -288,20 +284,19 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					A[notuse] = A[use];
 					SWAP(a[notuse][popid][id1],a[notuse][popid][id2]);
 					calc_Ai(a[notuse],A[notuse],popid);
-					logalpha = 1.0;
+					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
-					mydouble oldlik = likelihood;
-					newlik.setlog(known_source_loglik(A[notuse],b[notuse],R[use]));
+					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -323,19 +318,18 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					if(reject) break;
 					calc_Ai(a[notuse],A[notuse],popid);
 					// Prior-Hastings ratio
-					logalpha.setlog(ap[id].todouble()-ap_prime[id].todouble());
-					logalpha *= (ap_prime[id]/ap[id])^(beta);
+					double logalpha = ap[id].todouble()-ap_prime[id].todouble();
+					logalpha += ((ap_prime[id]/ap[id])^(beta)).LOG();
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
-					mydouble oldlik = likelihood;
-					newlik.setlog(known_source_loglik(A[notuse],b[notuse],R[use]));
+					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -347,20 +341,19 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					R[notuse] = R[use];
 					SWAP(r[notuse][popid][0],r[notuse][popid][1]);
 					calc_Ri(r[notuse],R[notuse],popid);
-					logalpha = 1.0;
+					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Symmetric proposal so Hastings ratio equals 1
 					// Likelihood ratio
-					mydouble oldlik = likelihood;
-					newlik.setlog(known_source_loglik(A[use],b[use],R[notuse]));
+					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -375,19 +368,18 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					rp_prime[id].setlog(ran.normal(rp[id].LOG(),sigma_r));
 					calc_Ri(r[notuse],R[notuse],popid);
 					// Prior-Hastings ratio
-					logalpha.setlog(rp[id].todouble()-rp_prime[id].todouble());
-					logalpha *= (rp_prime[id]/rp[id])^(gamma_);
+					double logalpha = rp[id].todouble()-rp_prime[id].todouble();
+					logalpha += ((rp_prime[id]/rp[id])^(gamma_)).LOG();
 					// Likelihood ratio
-					mydouble oldlik = likelihood;
-					newlik.setlog(known_source_loglik(A[use],b[use],R[notuse]));
+					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -401,7 +393,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 		/* output thinned traces of island model fit */
 		if(iter >= burnin && (iter+1)%thin==0)
-		  append_traces(iter+1, A[use], R[use], likelihood.LOG(), newlik.LOG(), logalpha.LOG(), move, evolution_traces, trace_row++);
+		  append_traces(iter+1, A[use], R[use], loglikelihood, loglikelihood, 0, 0, evolution_traces, trace_row++);
 
 		if((current=clock())>next) {
 		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
