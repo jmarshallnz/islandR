@@ -170,11 +170,11 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	int i,j;
 	/* Initialize the Markov chain */
 	int use = 0; int notuse = (int)!use;
-	Vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
-	Vector< Matrix<double> > a(2);
-	a[use] = Matrix<double>(ng,ng+2);		///<	Reparametrised migration matrix. a[,ng+1]=sum(a[,1:ng]), a[,ng]=mutation rate
-	a[notuse] = Matrix<double>(ng,ng+2);
-	Vector< Matrix<double> > A(2);
+	std::vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
+	std::vector< Matrix<double> > a(2);
+	a[use] = Matrix<double>(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
+	a[notuse] = Matrix<double>(ng,ng+1);
+	std::vector< Matrix<double> > A(2);
 	A[use] = Matrix<double>(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
 	A[notuse] = Matrix<double>(ng,ng+1);
 	const bool a_constraint = false;
@@ -401,22 +401,16 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 // Assumes A is correctly sized
 void Cluster::calc_A(Matrix<double> &a, Matrix<double> &A) {
-  int i,j;
-  const int n = a.ncols()-1;
-  for(i=0;i<a.nrows();i++) {
-    a[i][n] = 0.0;
-    for(j=0;j<n;j++) a[i][n] += a[i][j];
-    for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
+  for(int i = 0; i < a.nrows(); i++) {
+    calc_Ai(a, A, i);
   }
 }
 
 // Assumes A is correctly sized
 void Cluster::calc_Ai(Matrix<double> &a, Matrix<double> &A, const int i) {
-  int j;
-  const int n = a.ncols()-1;
-  a[i][n] = 0.0;
-  for(j=0;j<n;j++) a[i][n] += a[i][j];
-  for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
+  double row_sum = 0.0;
+  for(int j = 0; j < a.ncols(); j++) row_sum += a[i][j];
+  for(int j = 0; j < a.ncols(); j++) A[i][j] = a[i][j]/row_sum;
 }
 
 // Assumes R is correctly sized
