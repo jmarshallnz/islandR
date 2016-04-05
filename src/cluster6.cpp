@@ -152,7 +152,7 @@ void Cluster::precalc() {
 	}
 }
 
-void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik1, double lik2, double logalpha, int move, Matrix<double> &traces, int trace_row) {
+void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik, Matrix<double> &traces, int trace_row) {
   int col = 0;
   if (trace_row >= traces.nrows())
     return;
@@ -163,10 +163,7 @@ void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik1, 
   }
   for (int i = 0; i < R.nrows(); i++)
     traces[trace_row][col++] = R[i][0];
-  traces[trace_row][col++] = lik1;
-  traces[trace_row][col++] = lik2;
-  traces[trace_row][col++] = logalpha;
-  traces[trace_row][col++] = move;
+  traces[trace_row][col++] = lik;
 }
 
 /* This version uses the clonal frame version of the likelihood */
@@ -240,9 +237,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
-	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+4); // iter, A, r, loglik, loglik2, logalpha, move
+	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
 	int trace_row = 0;
-	append_traces(0, A[use], R[use], loglikelihood, loglikelihood, 0, NAN, evolution_traces, trace_row++);
+	append_traces(0, A[use], R[use], loglikelihood, evolution_traces, trace_row++);
 
 	clock_t start = clock(), current;
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
@@ -393,7 +390,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 		/* output thinned traces of island model fit */
 		if(iter >= burnin && (iter+1)%thin==0)
-		  append_traces(iter+1, A[use], R[use], loglikelihood, loglikelihood, 0, 0, evolution_traces, trace_row++);
+		  append_traces(iter+1, A[use], R[use], loglikelihood, evolution_traces, trace_row++);
 
 		if((current=clock())>next) {
 		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
