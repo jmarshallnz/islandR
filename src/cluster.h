@@ -27,8 +27,8 @@ class Cluster {
 
 public:
   // output stuff
-  myutils::Matrix<double> evolution_traces;
-	std::map<int, myutils::Matrix<double> > human_likelihoods;
+  Rcpp::NumericMatrix evolution_traces;
+  std::map<int, Rcpp::NumericMatrix> human_likelihoods;
 
 	Cluster() {
 		init = false;
@@ -81,7 +81,7 @@ public:
 	// Not very efficient 3d array class generated from vectors
 	typedef std::vector< std::vector<std::vector<double> > > Array3;
 
-	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
+	int multinom(const Rcpp::NumericVector &p, myutils::Random &ran);
 	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
 	double known_source_loglik(const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
 

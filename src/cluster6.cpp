@@ -154,18 +154,19 @@ void Cluster::precalc() {
 	}
 }
 
-void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Matrix<double> &traces, int trace_row) {
+void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, NumericMatrix &traces, int trace_row) {
   int col = 0;
-  if (trace_row >= traces.nrows())
+  if (trace_row >= traces.nrow())
     return;
-  traces[trace_row][col++] = iter;
+  NumericMatrix::Row row = traces(trace_row,_);
+  row[col++] = iter;
   for (int i = 0; i < A.nrow(); i++) {
     for (int j = 0; j < A.ncol(); j++)
-      traces[trace_row][col++] = A(i,j);
+      row[col++] = A(i,j);
   }
   for (int i = 0; i < R.nrow(); i++)
-    traces[trace_row][col++] = R(i,0);
-  traces[trace_row][col++] = lik;
+    row[col++] = R(i,0);
+  row[col++] = lik;
 }
 
 /* This version uses the clonal frame version of the likelihood */
@@ -174,7 +175,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 	int i,j;
 	/* Initialize the Markov chain */
-	int use = 0; int notuse = (int)!use;
 	std::vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
 	NumericMatrix a(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
 	NumericMatrix A(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
@@ -208,20 +208,18 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	double loglikelihood = known_source_loglik(A, b, R);
 
 	/* Proposal probabilities */
-	Vector<double> proprob(6,0.0);
-	proprob[0] = 42./5.;							//	Update A: switching proposal
-	proprob[1] = 42.;							//	Update A: log-normal proposal
-	proprob[4] = 12./5.;							//	Update r: switching proposal
-	proprob[5] = 12.;							//	Update r: log-normal proposal
-	double tot = 0.0;
-	for(i=0;i<proprob.size();i++) tot += proprob[i];
-	for(i=0;i<proprob.size();i++) proprob[i] /= tot;
+	NumericVector proprob = NumericVector::create(42./5.,   //	Update A: switching proposal
+                                                42.,      //	Update A: log-normal proposal
+                                                0.0, 0.0,
+                                                12./5.,   //	Update r: switching proposal
+                                                12.);     //	Update r: log-normal proposal
+  proprob = proprob / sum(proprob);
 
 	double sigma_a = 0.5;							//	factor for normal proposal in MH change of a (case 1)
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
-	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
+	evolution_traces = NumericMatrix(niter/thin+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
 	int trace_row = 0;
 	append_traces(0, A, R, loglikelihood, evolution_traces, trace_row++);
 
@@ -231,7 +229,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 	int iter;
 	const int burnin = (int)floor((double)niter*.1);
-	const int inc = MAX((int)floor((double)niter/100.),1);
+	const int inc = std::max((int)floor((double)niter/100.),1);
 	for(iter=0;iter<niter+burnin;iter++) {
 		if(iter>=burnin && (iter-burnin)%inc==0) {
 
@@ -240,12 +238,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		     to the evolutionary parameters. */
 
 			/* Compute likelihood of human isolate from each source */
-		  Matrix<double> phi(human.nrows(), ng);
+		  NumericMatrix phi(human.nrows(), ng);
 		  {
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            phi[h][j] = log(likHi6(h, j, A, b, R));
+            phi(h,j) = log(likHi6(h, j, A, b, R));
           }
 			  }
 			}
@@ -253,7 +251,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			human_likelihoods[iter] = phi;
 		}
 		else {
-			int move = multinom(proprob,ran);			//	random sweep for proposing moves
+			int move = multinom(proprob, ran);			//	random sweep for proposing moves
 			switch(move) {
 				case 0:	{// update A: switching proposal
 					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
@@ -426,14 +424,14 @@ Cluster::Array3 Cluster::calc_b(const NumericMatrix &A) {
   return b;
 }
 
-int Cluster::multinom(Vector<double> &p, Random &ran) {
+int Cluster::multinom(const NumericVector &p, Random &ran) {
   double U = ran.U();
-  int i;
-  for(i=0;i<p.size();i++) {
-    if((U-=p[i])<=0.0) break;
+  for (int i = 0; i < p.size(); i++) {
+    if ((U-=p[i]) <= 0.0)
+      return i;
   }
-  if(U>0.0) error("Problem in multinom");
-  return i;
+  error("Problem in multinom");
+  return 0;
 }
 
 void Cluster::initialise(Matrix<int> &isolate) {
