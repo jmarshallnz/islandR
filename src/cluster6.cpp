@@ -7,14 +7,15 @@
 
 using namespace myutils;
 
-mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
-	mydouble lik = 1.0;
+double Cluster::known_source_loglik(const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
+	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
-		punique = mydouble(a[i][ng]);
+		double punique = a[i][ng];
 		for (int j = 0; j < nST[i]; j++) {
-			mydouble ncopiesj = ABUN[i][j];
-			mydouble l_j(0.0);
+			double ncopiesj = ABUN[i][j];
+			std::vector<double> psame(nloc);
+			std::vector<double> pdiff(nloc);
 			for (int l = 0; l < nloc; l++) {
 				int allele = MLST[i][j][l];
 				double ac = acount[i][l][allele];
@@ -24,44 +25,43 @@ mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Mat
 				if(fabs(b_)<1.0e-7) {
 					b_ = 0.0;
 				}
-				psame[l] = mydouble(b_);
-				b_ = r[i][0] * bk;	// different so must have been recombination  Rcpp::Rcout << "Running initialise..." << std::endl;
+				psame[l] = b_;
+				b_ = r[i][0] * bk;	// different so must have been recombination
 
 				if(fabs(b_)<1.0e-7) {
 					b_ = 0.0;
 				}
-				pdiff[l] = mydouble(b_);
+				pdiff[l] = b_;
 			}
+			double l_j = 0.0;
 			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
-				mydouble l_ii(0.0);
-				mydouble mii(a[i][ii]/(1.0-a[i][ng]));
+				double l_ii = 0.0;
+				double mii = a[i][ii]/(1.0-a[i][ng]);
 				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
-					mydouble ncopiesjj = (i==ii && j==jj) ? abun[ii][jj]-MIN(abun[ii][jj],one)
-						: abun[ii][jj];
-					mydouble l_jj = mii;
+					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-MIN(ABUN[ii][jj],1.0)
+						: ABUN[ii][jj];
+					double l_jj = mii;
 					bool *BEAST_UNIQUE = beast_unique[i][j];
 					bool *SAME = ksame[i][j][ii][jj];
-					mydouble *PDIFF = pdiff.element;
-					mydouble *PSAME = psame.element;
-					for (int l = 0; l < nloc; l++, BEAST_UNIQUE++, SAME++, PDIFF++, PSAME++) {
+					for (int l = 0; l < nloc; l++, BEAST_UNIQUE++, SAME++) {
 						if(*BEAST_UNIQUE) {				// new allele (allow some rounding error)
 							l_jj *= punique;
 						}
 						else if(*SAME) {				// previously observed and same as CF
-							l_jj *= *PSAME;
+							l_jj *= psame[l];
 						}
 						else {							// previously observed but different to CF
-							l_jj *= *PDIFF;
+							l_jj *= pdiff[l];
 						}
 					}
 					l_ii += l_jj * ncopiesjj;
 				}
-				l_j += l_ii / SIZE[ii];
+				l_j += l_ii / size[ii];
 			}
-			lik *= l_j^ncopiesj;
+			loglik += log(l_j) * ncopiesj;
 		}
 	}
-	return lik;
+	return loglik;
 }
 
 mydouble Cluster::likHi6(const int id, const int i, const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
@@ -226,7 +226,8 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	calc_R(r[use],R[use]);
 
 	/* Storage for likelihoods */
-	mydouble likelihood = known_source_lik6_composite(A[use],b[use],R[use]);
+	mydouble likelihood;
+	likelihood.setlog(known_source_loglik(A[use],b[use],R[use]));
 
 	/* Proposal probabilities */
 	Vector<double> proprob(6,0.0);
@@ -296,7 +297,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
 					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[notuse],b[notuse],R[use]);
+					newlik.setlog(known_source_loglik(A[notuse],b[notuse],R[use]));
 
 					logalpha *= newlik / oldlik;
 					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
@@ -330,7 +331,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
 					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[notuse],b[notuse],R[use]);
+					newlik.setlog(known_source_loglik(A[notuse],b[notuse],R[use]));
 
 					logalpha *= newlik / oldlik;
 					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
@@ -354,7 +355,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Symmetric proposal so Hastings ratio equals 1
 					// Likelihood ratio
 					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[use],b[use],R[notuse]);
+					newlik.setlog(known_source_loglik(A[use],b[use],R[notuse]));
 
 					logalpha *= newlik / oldlik;
 					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
@@ -381,7 +382,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					logalpha *= (rp_prime[id]/rp[id])^(gamma_);
 					// Likelihood ratio
 					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[use],b[use],R[notuse]);
+					newlik.setlog(known_source_loglik(A[use],b[use],R[notuse]));
 
 					logalpha *= newlik / oldlik;
 					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
