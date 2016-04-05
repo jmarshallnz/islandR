@@ -202,9 +202,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 	}
 	recalc_b(A[use],b[use]);
-	Vector< Matrix<mydouble> > r(2);	///< Reparameterised per-group recombination rates
-	r[use] = Matrix<mydouble>(ng,3);	///< r[u,grp,3] = sum(r[u,grp,1:2])
-	r[notuse] = Matrix<mydouble>(ng,3);
+	Vector< Matrix<double> > r(2);	///< Reparameterised per-group recombination rates
+	r[use] = Matrix<double>(ng,3);	///< r[u,grp,3] = sum(r[u,grp,1:2])
+	r[notuse] = Matrix<double>(ng,3);
 	Vector< Matrix<double> > R(2);
 	R[use] = Matrix<double>(ng,2);		///< R[u,grp,1:2] = r[u,grp,1:2]/r[u,grp,3]
 	R[notuse] = Matrix<double>(ng,2);
@@ -358,12 +358,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					int id = ran.discrete(0,1);			// Change one or other of the gamma components
 					r[notuse] = r[use];
 					R[notuse] = R[use];
-					mydouble *rp = r[use][popid], *rp_prime = r[notuse][popid];
-					rp_prime[id].setlog(ran.normal(rp[id].LOG(),sigma_r));
+					double *rp = r[use][popid], *rp_prime = r[notuse][popid];
+					rp_prime[id] = exp(ran.normal(log(rp[id]),sigma_r));
 					calc_Ri(r[notuse],R[notuse],popid);
 					// Prior-Hastings ratio
-					double logalpha = rp[id].todouble()-rp_prime[id].todouble();
-					logalpha += ((rp_prime[id]/rp[id])^(gamma_)).LOG();
+					double logalpha = rp[id] - rp_prime[id];
+					logalpha += gamma_ * log(rp_prime[id]/rp[id]);
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
@@ -420,23 +420,23 @@ void Cluster::calc_Ai(Matrix<mydouble> &a, Matrix<double> &A, const int i) {
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_R(Matrix<mydouble> &r, Matrix<double> &R) {
+void Cluster::calc_R(Matrix<double> &r, Matrix<double> &R) {
   int i,j;
   const int n = r.ncols()-1;
   for(i=0;i<r.nrows();i++) {
     r[i][n] = 0.0;
     for(j=0;j<n;j++) r[i][n] += r[i][j];
-    for(j=0;j<n;j++) R[i][j] = (r[i][j]/r[i][n]).todouble();
+    for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
   }
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_Ri(Matrix<mydouble> &r, Matrix<double> &R, const int i) {
+void Cluster::calc_Ri(Matrix<double> &r, Matrix<double> &R, const int i) {
   int j;
   const int n = r.ncols()-1;
   r[i][n] = 0.0;
   for(j=0;j<n;j++) r[i][n] += r[i][j];
-  for(j=0;j<n;j++) R[i][j] = (r[i][j]/r[i][n]).todouble();
+  for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
 }
 
 void Cluster::recalc_b(Matrix<double> &A, Matrix< Vector<double> > &b) {

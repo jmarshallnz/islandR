@@ -90,8 +90,8 @@ public:
 	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
 	void calc_A(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A);
 	void calc_Ai(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A, const int i);
-	void calc_R(myutils::Matrix<mydouble> &r, myutils::Matrix<double> &R);
-	void calc_Ri(myutils::Matrix<mydouble> &r, myutils::Matrix<double> &R, const int i);
+	void calc_R(myutils::Matrix<double> &r, myutils::Matrix<double> &R);
+	void calc_Ri(myutils::Matrix<double> &r, myutils::Matrix<double> &R, const int i);
 	void precalc();
 	template<typename T> void pSWAP(myutils::Vector<T> &a, myutils::Vector<T> &b);
 	template<typename T> void pSWAP(myutils::Matrix<T> &a, myutils::Matrix<T> &b);
