@@ -125,9 +125,6 @@ void Cluster::precalc() {
                             || acount[ng][l][human_allele]==0);
 		}
 	}
-	puniq = Vector<mydouble>(nloc);
-	psame = Vector<mydouble>(nloc);
-	pdiff = Vector<mydouble>(nloc);
 
 	ksame = new bool****[ng];
 	for(int i = 0; i < ng; i++) {

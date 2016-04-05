@@ -24,7 +24,6 @@ class Cluster {
 
 	myutils::Matrix<int> human;				// those sampled from humans
 
-	myutils::Vector<mydouble> puniq,psame,pdiff;
 	myutils::Matrix<bool> human_unique;
 	myutils::Vector< myutils::Matrix<bool> > beast_unique;
 	bool ****same;
