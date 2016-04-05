@@ -8,15 +8,14 @@
 using namespace myutils;
 
 mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
-	int i,j,ii,jj,l;
 	mydouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
-	for(i=0;i<ng;i++) {
+	for (int i = 0; i < ng; i++) {
 		punique = mydouble(a[i][ng]);
-		for(j=0;j<nST[i];j++) {
+		for (int j = 0; j < nST[i]; j++) {
 			mydouble ncopiesj = ABUN[i][j];
 			mydouble l_j(0.0);
-			for(l=0;l<nloc;l++) {
+			for (int l = 0; l < nloc; l++) {
 				int allele = MLST[i][j][l];
 				double ac = acount[i][l][allele];
 				double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
@@ -33,10 +32,10 @@ mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Mat
 				}
 				pdiff[l] = mydouble(b_);
 			}
-			for(ii=0;ii<ng;ii++) {						//	Cycle through source of the clonal frame
+			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
 				mydouble l_ii(0.0);
 				mydouble mii(a[i][ii]/(1.0-a[i][ng]));
-				for(jj=0;jj<nST[ii];jj++) {				//	Cycle through each ST from that source
+				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
 					mydouble ncopiesjj = (i==ii && j==jj) ? abun[ii][jj]-MIN(abun[ii][jj],one)
 						: abun[ii][jj];
 					mydouble l_jj = mii;
@@ -44,7 +43,7 @@ mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Mat
 					bool *SAME = ksame[i][j][ii][jj];
 					mydouble *PDIFF = pdiff.element;
 					mydouble *PSAME = psame.element;
-					for(l=0;l<nloc;l++,BEAST_UNIQUE++,SAME++,PDIFF++,PSAME++) {
+					for (int l = 0; l < nloc; l++, BEAST_UNIQUE++, SAME++, PDIFF++, PSAME++) {
 						if(*BEAST_UNIQUE) {				// new allele (allow some rounding error)
 							l_jj *= punique;
 						}
@@ -66,26 +65,25 @@ mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Mat
 }
 
 mydouble Cluster::likHi6(const int id, const int i, const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
-	int ii,jj,l;
 /// NOTE: Little a in this function is A everywhere else!!!
 
 //	punique = mydouble(a[i][ng]);						// MAKE SURE THIS IS SET BEFORE CALLING likHi6()
-	for(l=0;l<nloc;l++) {
+	for (int l = 0; l < nloc; l++) {
 		int human_allele = human[id][l];
 		pdiff[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele],0.0));
 		psame[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele] + r[i][1] * (1.0-a[i][ng]),0.0));
 	}
 	mydouble lik(0.0);
-	for(ii=0;ii<ng;ii++) {								// Cycle through source of the clonal frame
+	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
 		mydouble mii(a[i][ii]/(1.0-a[i][ng]));
 		mydouble l_ii(0.0);
-		for(jj=0;jj<nST[ii];jj++) {
+		for (int jj = 0; jj <nST[ii]; jj++) {
 			mydouble l_jj = mii;						//	Cycle through each ST from that source
 			bool* HUMAN_UNIQUE = human_unique[id];
 			bool* SAME = same[id][ii][jj];
 			mydouble* PSAME = psame.element;
 			mydouble* PDIFF = pdiff.element;
-			for(l=0;l<nloc;l++,HUMAN_UNIQUE++,SAME++,PSAME++,PDIFF++) {
+			for(int l=0; l<nloc; l++, HUMAN_UNIQUE++, SAME++, PSAME++, PDIFF++) {
 				if(*HUMAN_UNIQUE) {						// new allele (allow some rounding error)
 					l_jj *= punique;
 				}
