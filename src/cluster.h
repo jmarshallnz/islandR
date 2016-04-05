@@ -78,11 +78,14 @@ public:
 		delete[] ksame;
 	}
 
-	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
-	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const myutils::Matrix< myutils::Vector<double> > &b, const Rcpp::NumericMatrix &R);
-	double known_source_loglik(const Rcpp::NumericMatrix &A, const myutils::Matrix< myutils::Vector<double> > &b, const Rcpp::NumericMatrix &R);
+	// Not very efficient 3d array class generated from vectors
+	typedef std::vector< std::vector<std::vector<double> > > Array3;
 
-	void recalc_b(const Rcpp::NumericMatrix &A, myutils::Matrix< myutils::Vector<double> > &b);
+	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
+	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
+	double known_source_loglik(const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
+
+	Array3 calc_b(const Rcpp::NumericMatrix &A);
 	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);
 	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);

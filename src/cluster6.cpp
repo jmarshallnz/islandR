@@ -12,7 +12,7 @@ using Rcpp::clone;
 
 using namespace myutils;
 
-double Cluster::known_source_loglik(const NumericMatrix &A, const Matrix< Vector<double> > &b, const NumericMatrix &R) {
+double Cluster::known_source_loglik(const NumericMatrix &A, const Array3 &b, const NumericMatrix &R) {
 	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
@@ -69,7 +69,7 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const Matrix< Vector
 	return loglik;
 }
 
-double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const Matrix< Vector<double> > &b, const NumericMatrix &R) {
+double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const Array3 &b, const NumericMatrix &R) {
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
@@ -192,17 +192,8 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 	}
 	calc_A(a, A);	///< Does transformation to M
+	Array3 b = calc_b(A);
 
-	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(FREQ[grp][loc][i] * A[grp][j]) (where A = (1-mu)*M)
-	b[use] = Matrix< Vector<double> >(ng,nloc);
-	b[notuse] = Matrix< Vector<double> >(ng,nloc);
-	for(i=0;i<ng;i++) {
-		for(j=0;j<nloc;j++) {
-			b[use][i][j] = Vector<double>(acount[i][j].size());	///< number of alleles on group i locus j
-			b[notuse][i][j] = Vector<double>(acount[i][j].size());	///< number of alleles on group i locus j
-		}
-	}
-	recalc_b(A, b[use]);
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
 	for(i=0;i<ng;i++) {
@@ -214,7 +205,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	calc_R(r, R);
 
 	/* Storage for likelihoods */
-	double loglikelihood = known_source_loglik(A,b[use],R);
+	double loglikelihood = known_source_loglik(A, b, R);
 
 	/* Proposal probabilities */
 	Vector<double> proprob(6,0.0);
@@ -254,7 +245,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            phi[h][j] = log(likHi6(h,j,A,b[use],R));
+            phi[h][j] = log(likHi6(h, j, A, b, R));
           }
 			  }
 			}
@@ -281,14 +272,14 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
 					// Likelihood ratio
-					recalc_b(A_prop, b[notuse]);
-					double newloglik = known_source_loglik(A_prop, b[notuse], R);
+					Array3 b_prop = calc_b(A_prop);
+					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
-					  SWAP(use,notuse);
+					  b  = b_prop;
 						loglikelihood = newloglik;
 					}
 					else { // reject
@@ -315,14 +306,14 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double logalpha = ar[id] - ar_prop[id];
 					logalpha += beta * log(ar_prop[id]/ar[id]);
 					// Likelihood ratio
-					recalc_b(A_prop, b[notuse]);
-					double newloglik = known_source_loglik(A_prop, b[notuse], R);
+					Array3 b_prop = calc_b(A_prop);
+					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
-					  SWAP(use,notuse);
+					  b  = b_prop;
 						loglikelihood = newloglik;
 					}
 					else { // reject
@@ -342,14 +333,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Prior ratio equals 1 because prior is symmetric
 					// Symmetric proposal so Hastings ratio equals 1
 					// Likelihood ratio
-					double newloglik = known_source_loglik(A, b[use], R_prop);
+					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						b[notuse] = b[use];
 						rr = rr_prop;
 						R(popid,_) = R_prop(popid,_);
-						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
 					else { // reject
@@ -369,14 +358,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double logalpha = rr[id] - rr_prop[id];
 					logalpha += gamma_ * log(rr_prop[id]/rr[id]);
 					// Likelihood ratio
-					double newloglik = known_source_loglik(A, b[use], R_prop);
+					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						b[notuse] = b[use];
 						rr = rr_prop;
 						R(popid, _) = R_prop(popid, _);
-						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
 					else { // reject
@@ -421,19 +408,22 @@ NumericVector Cluster::normalise(const NumericVector &x) {
   return x / sum(x);
 }
 
-void Cluster::recalc_b(const NumericMatrix &A, Matrix< Vector<double> > &b) {
-  int i,j,k,l;
-  for(i=0;i<ng;i++) {
-    for(j=0;j<nloc;j++) {
-      for(k=0;k<acount[i][j].size();k++) {
+Cluster::Array3 Cluster::calc_b(const NumericMatrix &A) {
+  Array3 b(ng);
+  for(int i = 0; i < ng; i++) {
+    b[i].resize(nloc);
+    for(int j = 0; j < nloc; j++) {
+      b[i][j].resize(acount[i][j].size());
+      for(int k = 0; k < acount[i][j].size(); k++) {
         b[i][j][k] = 0.0;
-        for(l=0;l<ng;l++) {
+        for(int l = 0; l < ng; l++) {
           b[i][j][k] += acount[l][j][k] * A(i,l);
           //					bk[i][j][k] += (acount[l][j][k]*(double)size[l]-1.0)/(double)(size[l]-1) * a[i][l];
         }
       }
     }
   }
+  return b;
 }
 
 int Cluster::multinom(Vector<double> &p, Random &ran) {
