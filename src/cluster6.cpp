@@ -279,7 +279,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            punique = a[use][j][ng];              // NOTE USE of little a here!!!
+            punique = A[use][j][ng];
             phi[h][j] = likHi6(h,j,A[use],b[use],R[use]).LOG();
           }
 			  }
