@@ -5,6 +5,10 @@
 
 #include <Rcpp.h>
 
+using Rcpp::NumericMatrix;
+using Rcpp::NumericVector;
+using Rcpp::_;
+
 using namespace myutils;
 
 double Cluster::known_source_loglik(const Matrix<double> &A, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
@@ -171,9 +175,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	/* Initialize the Markov chain */
 	int use = 0; int notuse = (int)!use;
 	std::vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
-	std::vector< Matrix<double> > a(2);
-	a[use] = Matrix<double>(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
-	a[notuse] = Matrix<double>(ng,ng+1);
+	NumericMatrix a(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
 	std::vector< Matrix<double> > A(2);
 	A[use] = Matrix<double>(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
 	A[notuse] = Matrix<double>(ng,ng+1);
@@ -181,16 +183,16 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	for(i=0;i<ng;i++) {
 		while(true) {
 			for(j=0;j<ng+1;j++) {
-				a[use][i][j] = ran.gamma(1.,BETA[j]);
+				a(i,j) = ran.gamma(1.,BETA[j]);
 			}
 
 			if(!a_constraint) break;
-			double amax = a[use][i][0];
-			for(j=1;j<ng;j++) if(a[use][i][j]>amax) amax = a[use][i][j];
-			if(a[use][i][i]==amax) break;
+			double amax = a(i,0);
+			for(j=1;j<ng;j++) if(a(i,j)>amax) amax = a(i,j);
+			if(a(i,i)==amax) break;
 		}
 	}
-	calc_A(a[use],A[use]);	///< Does transformation to M
+	calc_A(a, A[use]);	///< Does transformation to M
 
 	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(FREQ[grp][loc][i] * A[grp][j]) (where A = (1-mu)*M)
 	b[use] = Matrix< Vector<double> >(ng,nloc);
@@ -274,10 +276,13 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					int id2 = ran.discrete(0,ng-1);
 					if(id2==id1) id2 = ng;
 					if(a_constraint && (id1==popid || id2==popid)) break;
-					a[notuse] = a[use];
+					// Need only update one row of a
+					NumericMatrix::Row ar = a(popid,_);
+					NumericVector ar_prop = ar;
 					A[notuse] = A[use];
-					SWAP(a[notuse][popid][id1],a[notuse][popid][id2]);
-					calc_Ai(a[notuse],A[notuse],popid);
+					ar_prop[id1] = ar[id2];
+					ar_prop[id2] = ar[id1];
+					calc_Ai(ar_prop, A[notuse], popid);
 					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
@@ -289,6 +294,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
+						ar = ar_prop;
 						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
@@ -299,21 +305,22 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 				case 1:	{// update A: log-normal proposal
 					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
 					int id = ran.discrete(0,ng);		// Principal element of mig matrix to change
-					a[notuse] = a[use];
+					// Need only update one row of a
+					NumericMatrix::Row ar = a(popid,_);
+					NumericVector ar_prop = ar;
 					A[notuse] = A[use];
-					double *ap = a[use][popid], *ap_prime = a[notuse][popid];
-					ap_prime[id] = exp(ran.normal(log(ap[id]),sigma_a));
+					ar_prop[id] = exp(ran.normal(log(ar[id]), sigma_a));
 					bool reject = false;
 					if(a_constraint) {
-						double ap_primemax = ap_prime[0];
-						for(j=1;j<ng;j++) if(ap_prime[j]>ap_primemax) ap_primemax = ap_prime[j];
-						if(ap_prime[popid]!=ap_primemax) reject = true;
+						double ap_primemax = ar_prop[0];
+						for(j=1;j<ng;j++) if(ar_prop[j]>ap_primemax) ap_primemax = ar_prop[j];
+						if(ar_prop[popid]!=ap_primemax) reject = true;
 					}
 					if(reject) break;
-					calc_Ai(a[notuse],A[notuse],popid);
+					calc_Ai(ar_prop, A[notuse], popid);
 					// Prior-Hastings ratio
-					double logalpha = ap[id] - ap_prime[id];
-					logalpha += beta * log(ap_prime[id]/ap[id]);
+					double logalpha = ar[id] - ar_prop[id];
+					logalpha += beta * log(ar_prop[id]/ar[id]);
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
 					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
@@ -322,6 +329,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
+						ar = ar_prop;
 						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
@@ -343,7 +351,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
@@ -369,7 +376,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
@@ -400,17 +406,16 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 // helper stuff below here
 
 // Assumes A is correctly sized
-void Cluster::calc_A(Matrix<double> &a, Matrix<double> &A) {
-  for(int i = 0; i < a.nrows(); i++) {
-    calc_Ai(a, A, i);
+void Cluster::calc_A(NumericMatrix &a, Matrix<double> &A) {
+  for (int i = 0; i < a.nrow(); i++) {
+    calc_Ai(a(i,_), A, i);
   }
 }
 
 // Assumes A is correctly sized
-void Cluster::calc_Ai(Matrix<double> &a, Matrix<double> &A, const int i) {
-  double row_sum = 0.0;
-  for(int j = 0; j < a.ncols(); j++) row_sum += a[i][j];
-  for(int j = 0; j < a.ncols(); j++) A[i][j] = a[i][j]/row_sum;
+void Cluster::calc_Ai(const NumericVector &a, Matrix<double> &A, const int i) {
+  double row_sum = sum(a);
+  for (int j = 0; j < a.size(); j++) A[i][j] = a[j]/row_sum;
 }
 
 // Assumes R is correctly sized
