@@ -204,20 +204,18 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 	}
 	recalc_b(A[use],b[use]);
-	Vector< Matrix<double> > r(2);	///< Reparameterised per-group recombination rates
-	r[use] = Matrix<double>(ng,3);	///< r[u,grp,3] = sum(r[u,grp,1:2])
-	r[notuse] = Matrix<double>(ng,3);
-	Vector< Matrix<double> > R(2);
-	R[use] = Matrix<double>(ng,2);		///< R[u,grp,1:2] = r[u,grp,1:2]/r[u,grp,3]
+	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
+	std::vector< Matrix<double> > R(2);
+	R[use] = Matrix<double>(ng,2);		///< R[u,grp,1:2] = r[u,grp,1:2]/sum(r[u,grp,1:2])
 	R[notuse] = Matrix<double>(ng,2);
 	Vector<double> GAMMA_(ng,gamma_);
 	for(i=0;i<ng;i++) {
 		//r[i] = ran.beta(gamma_,gamma_);
 		for(j=0;j<2;j++) {
-			r[use][i][j] = ran.gamma(1.,gamma_);
+			r(i,j) = ran.gamma(1.,gamma_);
 		}
 	}
-	calc_R(r[use],R[use]);
+	calc_R(r, R[use]);
 
 	/* Storage for likelihoods */
 	double loglikelihood = known_source_loglik(A[use],b[use],R[use]);
@@ -292,7 +290,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						r[notuse] = r[use];
 						R[notuse] = R[use];
 						ar = ar_prop;
 						SWAP(use,notuse);
@@ -327,7 +324,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
-						r[notuse] = r[use];
 						R[notuse] = R[use];
 						ar = ar_prop;
 						SWAP(use,notuse);
@@ -339,10 +335,13 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 				}
 				case 4: {// update r (switching move)
 					int popid = ran.discrete(0,ng-1);
-					r[notuse] = r[use];
+				  // Need only update one row of r
+				  NumericMatrix::Row rr = r(popid,_);
+				  NumericVector rr_prop = rr;
 					R[notuse] = R[use];
-					SWAP(r[notuse][popid][0],r[notuse][popid][1]);
-					calc_Ri(r[notuse],R[notuse],popid);
+					rr_prop[0] = rr[1];
+					rr_prop[1] = rr[0];
+					calc_Ri(rr_prop, R[notuse], popid);
 					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Symmetric proposal so Hastings ratio equals 1
@@ -353,6 +352,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						A[notuse] = A[use];
 						b[notuse] = b[use];
+						rr = rr_prop;
 						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
@@ -363,14 +363,15 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 				case 5:	{// update r (log-normal move)
 					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "rec" parameter
 					int id = ran.discrete(0,1);			// Change one or other of the gamma components
-					r[notuse] = r[use];
+					// Need only update one row of r
+					NumericMatrix::Row rr = r(popid,_);
+					NumericVector rr_prop = rr;
 					R[notuse] = R[use];
-					double *rp = r[use][popid], *rp_prime = r[notuse][popid];
-					rp_prime[id] = exp(ran.normal(log(rp[id]),sigma_r));
-					calc_Ri(r[notuse],R[notuse],popid);
+					rr_prop[id] = exp(ran.normal(log(rr[id]), sigma_r));
+					calc_Ri(rr_prop, R[notuse], popid);
 					// Prior-Hastings ratio
-					double logalpha = rp[id] - rp_prime[id];
-					logalpha += gamma_ * log(rp_prime[id]/rp[id]);
+					double logalpha = rr[id] - rr_prop[id];
+					logalpha += gamma_ * log(rr_prop[id]/rr[id]);
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
@@ -378,6 +379,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						A[notuse] = A[use];
 						b[notuse] = b[use];
+						rr = rr_prop;
 						SWAP(use,notuse);
 						loglikelihood = newloglik;
 					}
@@ -419,23 +421,16 @@ void Cluster::calc_Ai(const NumericVector &a, Matrix<double> &A, const int i) {
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_R(Matrix<double> &r, Matrix<double> &R) {
-  int i,j;
-  const int n = r.ncols()-1;
-  for(i=0;i<r.nrows();i++) {
-    r[i][n] = 0.0;
-    for(j=0;j<n;j++) r[i][n] += r[i][j];
-    for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
+void Cluster::calc_R(NumericMatrix &r, Matrix<double> &R) {
+  for (int i = 0; i < r.nrow(); i++) {
+    calc_Ri(r(i,_), R, i);
   }
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_Ri(Matrix<double> &r, Matrix<double> &R, const int i) {
-  int j;
-  const int n = r.ncols()-1;
-  r[i][n] = 0.0;
-  for(j=0;j<n;j++) r[i][n] += r[i][j];
-  for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
+void Cluster::calc_Ri(const NumericVector &r, Matrix<double> &R, const int i) {
+  double row_sum = sum(r);
+  for (int j = 0; j < r.size(); j++) R[i][j] = r[j]/row_sum;
 }
 
 void Cluster::recalc_b(Matrix<double> &A, Matrix< Vector<double> > &b) {
