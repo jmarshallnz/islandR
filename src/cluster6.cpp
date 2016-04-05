@@ -64,40 +64,38 @@ double Cluster::known_source_loglik(const Matrix<double> &A, const Matrix< Vecto
 	return loglik;
 }
 
-mydouble Cluster::likHi6(const int id, const int i, const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
-/// NOTE: Little a in this function is A everywhere else!!!
+double Cluster::likHi6(const int id, const int i, const Matrix<double> &A, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
+	std::vector<double> pdiff(nloc);
+	std::vector<double> psame(nloc);
 
-//	punique = mydouble(a[i][ng]);						// MAKE SURE THIS IS SET BEFORE CALLING likHi6()
+	double puniq = A[i][ng]; // mutation rate
 	for (int l = 0; l < nloc; l++) {
 		int human_allele = human[id][l];
-		pdiff[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele],0.0));
-		psame[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele] + r[i][1] * (1.0-a[i][ng]),0.0));
+		pdiff[l] = MAX(r[i][0] * b[i][l][human_allele],0.0);
+		psame[l] = MAX(r[i][0] * b[i][l][human_allele] + r[i][1] * (1.0-A[i][ng]),0.0);
 	}
-	mydouble lik(0.0);
+	double lik = 0.0;
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
-		mydouble mii(a[i][ii]/(1.0-a[i][ng]));
-		mydouble l_ii(0.0);
+		double mii = A[i][ii]/(1.0-A[i][ng]);
+		double l_ii = 0.0;
 		for (int jj = 0; jj <nST[ii]; jj++) {
-			mydouble l_jj = mii;						//	Cycle through each ST from that source
+			double l_jj = mii;						//	Cycle through each ST from that source
 			bool* HUMAN_UNIQUE = human_unique[id];
 			bool* SAME = same[id][ii][jj];
-			mydouble* PSAME = psame.element;
-			mydouble* PDIFF = pdiff.element;
-			for(int l=0; l<nloc; l++, HUMAN_UNIQUE++, SAME++, PSAME++, PDIFF++) {
+			for(int l=0; l<nloc; l++, HUMAN_UNIQUE++, SAME++) {
 				if(*HUMAN_UNIQUE) {						// new allele (allow some rounding error)
-					l_jj *= punique;
+					l_jj *= puniq;
 				}
 				else if(*SAME) {						// previously observed and same as CF
-					l_jj *= *PSAME;
+					l_jj *= psame[l];
 				}
 				else {									// previously observed but different to CF
-					l_jj *= *PDIFF;
+					l_jj *= pdiff[l];
 				}
 			}
-			mydouble &ncopiesjj = abun[ii][jj];
-			l_ii += l_jj * ncopiesjj;
+			l_ii += l_jj * ABUN[ii][jj];
 		}
-		lik += l_ii / SIZE[ii];
+		lik += l_ii / size[ii];
 	}
 	return lik;
 }
@@ -268,8 +266,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            punique = A[use][j][ng];
-            phi[h][j] = likHi6(h,j,A[use],b[use],R[use]).LOG();
+            phi[h][j] = log(likHi6(h,j,A[use],b[use],R[use]));
           }
 			  }
 			}

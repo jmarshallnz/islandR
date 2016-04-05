@@ -24,7 +24,6 @@ class Cluster {
 
 	myutils::Matrix<int> human;				// those sampled from humans
 
-	mydouble punique;
 	myutils::Vector<mydouble> puniq,psame,pdiff;
 	myutils::Matrix<bool> human_unique;
 	myutils::Vector< myutils::Matrix<bool> > beast_unique;
@@ -86,7 +85,7 @@ public:
 	}
 
 	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
-	mydouble likHi6(const int id, const int i, const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
+	double likHi6(const int id, const int i, const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
 	double known_source_loglik(const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
 
 	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
