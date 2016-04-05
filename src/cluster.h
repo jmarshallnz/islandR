@@ -79,14 +79,13 @@ public:
 	}
 
 	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
-	double likHi6(const int id, const int i, const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
-	double known_source_loglik(const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
+	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const myutils::Matrix< myutils::Vector<double> > &b, const Rcpp::NumericMatrix &R);
+	double known_source_loglik(const Rcpp::NumericMatrix &A, const myutils::Matrix< myutils::Vector<double> > &b, const Rcpp::NumericMatrix &R);
 
-	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
-	void calc_A(Rcpp::NumericMatrix &a, myutils::Matrix<double> &A);
-	void calc_Ai(const Rcpp::NumericVector &a, myutils::Matrix<double> &A, const int i);
-	void calc_R(Rcpp::NumericMatrix &r, myutils::Matrix<double> &R);
-	void calc_Ri(const Rcpp::NumericVector &r, myutils::Matrix<double> &R, const int i);
+	void recalc_b(const Rcpp::NumericMatrix &A, myutils::Matrix< myutils::Vector<double> > &b);
+	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);
+	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
+	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
 	void precalc();
 	template<typename T> void pSWAP(myutils::Vector<T> &a, myutils::Vector<T> &b);
 	template<typename T> void pSWAP(myutils::Matrix<T> &a, myutils::Matrix<T> &b);
