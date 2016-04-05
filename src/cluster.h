@@ -88,8 +88,8 @@ public:
 	double known_source_loglik(const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
 
 	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
-	void calc_A(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A);
-	void calc_Ai(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A, const int i);
+	void calc_A(myutils::Matrix<double> &a, myutils::Matrix<double> &A);
+	void calc_Ai(myutils::Matrix<double> &a, myutils::Matrix<double> &A, const int i);
 	void calc_R(myutils::Matrix<double> &r, myutils::Matrix<double> &R);
 	void calc_Ri(myutils::Matrix<double> &r, myutils::Matrix<double> &R, const int i);
 	void precalc();

@@ -171,9 +171,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	/* Initialize the Markov chain */
 	int use = 0; int notuse = (int)!use;
 	Vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
-	Vector< Matrix<mydouble> > a(2);
-	a[use] = Matrix<mydouble>(ng,ng+2);		///<	Reparametrised migration matrix. a[,ng+1]=sum(a[,1:ng]), a[,ng]=mutation rate
-	a[notuse] = Matrix<mydouble>(ng,ng+2);
+	Vector< Matrix<double> > a(2);
+	a[use] = Matrix<double>(ng,ng+2);		///<	Reparametrised migration matrix. a[,ng+1]=sum(a[,1:ng]), a[,ng]=mutation rate
+	a[notuse] = Matrix<double>(ng,ng+2);
 	Vector< Matrix<double> > A(2);
 	A[use] = Matrix<double>(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
 	A[notuse] = Matrix<double>(ng,ng+1);
@@ -185,7 +185,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			}
 
 			if(!a_constraint) break;
-			mydouble amax = a[use][i][0];
+			double amax = a[use][i][0];
 			for(j=1;j<ng;j++) if(a[use][i][j]>amax) amax = a[use][i][j];
 			if(a[use][i][i]==amax) break;
 		}
@@ -301,19 +301,19 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					int id = ran.discrete(0,ng);		// Principal element of mig matrix to change
 					a[notuse] = a[use];
 					A[notuse] = A[use];
-					mydouble *ap = a[use][popid], *ap_prime = a[notuse][popid];
-					ap_prime[id].setlog(ran.normal(ap[id].LOG(),sigma_a));
+					double *ap = a[use][popid], *ap_prime = a[notuse][popid];
+					ap_prime[id] = exp(ran.normal(log(ap[id]),sigma_a));
 					bool reject = false;
 					if(a_constraint) {
-						mydouble ap_primemax = ap_prime[0];
+						double ap_primemax = ap_prime[0];
 						for(j=1;j<ng;j++) if(ap_prime[j]>ap_primemax) ap_primemax = ap_prime[j];
 						if(ap_prime[popid]!=ap_primemax) reject = true;
 					}
 					if(reject) break;
 					calc_Ai(a[notuse],A[notuse],popid);
 					// Prior-Hastings ratio
-					double logalpha = ap[id].todouble()-ap_prime[id].todouble();
-					logalpha += ((ap_prime[id]/ap[id])^(beta)).LOG();
+					double logalpha = ap[id] - ap_prime[id];
+					logalpha += beta * log(ap_prime[id]/ap[id]);
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
 					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
@@ -400,23 +400,23 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 // helper stuff below here
 
 // Assumes A is correctly sized
-void Cluster::calc_A(Matrix<mydouble> &a, Matrix<double> &A) {
+void Cluster::calc_A(Matrix<double> &a, Matrix<double> &A) {
   int i,j;
   const int n = a.ncols()-1;
   for(i=0;i<a.nrows();i++) {
     a[i][n] = 0.0;
     for(j=0;j<n;j++) a[i][n] += a[i][j];
-    for(j=0;j<n;j++) A[i][j] = (a[i][j]/a[i][n]).todouble();
+    for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
   }
 }
 
 // Assumes A is correctly sized
-void Cluster::calc_Ai(Matrix<mydouble> &a, Matrix<double> &A, const int i) {
+void Cluster::calc_Ai(Matrix<double> &a, Matrix<double> &A, const int i) {
   int j;
   const int n = a.ncols()-1;
   a[i][n] = 0.0;
   for(j=0;j<n;j++) a[i][n] += a[i][j];
-  for(j=0;j<n;j++) A[i][j] = (a[i][j]/a[i][n]).todouble();
+  for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
 }
 
 // Assumes R is correctly sized
