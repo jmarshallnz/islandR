@@ -86,8 +86,8 @@ public:
 	}
 
 	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
-	mydouble likHi6(const int id, const int i, myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b, myutils::Matrix<double> &r);
-	mydouble known_source_lik6_composite(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b, myutils::Matrix<double> &r);
+	mydouble likHi6(const int id, const int i, const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
+	mydouble known_source_lik6_composite(const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
 
 	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
 	void calc_A(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A);

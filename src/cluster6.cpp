@@ -7,7 +7,7 @@
 
 using namespace myutils;
 
-mydouble Cluster::known_source_lik6_composite(Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
+mydouble Cluster::known_source_lik6_composite(const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
 	int i,j,ii,jj,l;
 	mydouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
@@ -65,7 +65,7 @@ mydouble Cluster::known_source_lik6_composite(Matrix<double> &a, Matrix< Vector<
 	return lik;
 }
 
-mydouble Cluster::likHi6(const int id, const int i, Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
+mydouble Cluster::likHi6(const int id, const int i, const Matrix<double> &a, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
 	int ii,jj,l;
 /// NOTE: Little a in this function is A everywhere else!!!
 
