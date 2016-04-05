@@ -192,7 +192,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	}
 	calc_A(a[use],A[use]);	///< Does transformation to M
 
-	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(freq[grp][loc][i] * M[grp][j])
+	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(FREQ[grp][loc][i] * A[grp][j]) (where A = (1-mu)*M)
 	b[use] = Matrix< Vector<double> >(ng,nloc);
 	b[notuse] = Matrix< Vector<double> >(ng,nloc);
 	for(i=0;i<ng;i++) {
@@ -554,9 +554,6 @@ void Cluster::initialise(Matrix<int> &isolate) {
       ++size[ng];
     }
   }
-  SIZE = Vector<mydouble>(ng+1);	///< number of isolates in each group, SIZE[ng] is number of STs
-  for (int i = 0;i <= ng; i++)
-    SIZE[i] = mydouble((double)size[i]);
 
   /* Allocate memory for allele counts */
   acount.resize(ng+1,nloc);	///< counts of alleles in each group at each loci
@@ -569,14 +566,10 @@ void Cluster::initialise(Matrix<int> &isolate) {
   }
   /* Record the allelic profile for each unique ST in each group */
   MLST.resize(ng);		///< MLST[group,unique_st,loci] -> MLST[group] is profile of each unique ST
-  freq.resize(ng);		///< freq[group,unique_st] proportion of unique_st in group
-  abun.resize(ng);		///< abun[group,unique_st] number of unique_st in group
-  FREQ.resize(ng);		///< FREQ[group,unique_st] same as freq but double
-  ABUN.resize(ng);		///< ABUN[group,unique_st] same as abun but double
+  FREQ.resize(ng);		///< FREQ[group,unique_st] proportion of unique_st in group
+  ABUN.resize(ng);		///< ABUN[group,unique_st] number of unique_st in group
   for (int i = 0; i < ng; i++) {
     MLST[i].resize(nST[i],nloc);
-    freq[i].resize(nST[i]);
-    abun[i].resize(nST[i]);
     FREQ[i].resize(nST[i]);
     ABUN[i].resize(nST[i]);
   }
@@ -588,8 +581,6 @@ void Cluster::initialise(Matrix<int> &isolate) {
         for (int j = 0; j < nloc; j++) { // copy across the MLST profile
           MLST[sc][ix[sc]][j] = aprofile[i][j];
         }
-        freq[sc][ix[sc]] = mydouble((double)ct/(double)size[sc]);
-        abun[sc][ix[sc]] = mydouble((double)ct);
         FREQ[sc][ix[sc]] = (double)ct/(double)size[sc];
         ABUN[sc][ix[sc]] = (double)ct;
         for(int j = 0; j < nloc; j++) { // for each loci

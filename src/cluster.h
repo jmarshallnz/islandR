@@ -2,22 +2,17 @@
 #define _CLUSTER_H_
 
 #include "myutils.h"
-#include "mydouble.h"
 #include <map>
 
 class Cluster {
 	int ng;							// # groups
   myutils::Vector< myutils::Matrix<int> > MLST;		// haps for each
   myutils::Vector<int> size;				// size of each
-  myutils::Vector<mydouble> SIZE;			// size of each
   myutils::Vector<int> nST;				// # unique STs in each
   myutils::Matrix<int> nalleles;			// nalleles[i][j] # unique alleles in group i at locus j
   myutils::Vector< myutils::Vector<double> > FREQ;		// freq of STs in each group
   myutils::Vector< myutils::Vector<double> > ABUN;		// abundance of STs in each group
-  myutils::Vector< myutils::Vector<mydouble> > freq;	// freq of STs in each group
-  myutils::Vector< myutils::Vector<mydouble> > abun;	// abundance of STs in each group
   myutils::Matrix< myutils::Vector<double> > acount;	// acount[i][j][k] gives the count, in pop i, and locus j, of allele k
-  mydouble one;
 
   int nloc;						// # loci
 	bool init;
@@ -37,7 +32,6 @@ public:
 	Cluster() {
 		init = false;
 		nloc = 7;
-		one = 1.0;
 		same = NULL;
 		ksame = NULL;
 	}
