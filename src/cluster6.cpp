@@ -6,7 +6,9 @@
 #include <Rcpp.h>
 
 using Rcpp::NumericMatrix;
+using Rcpp::IntegerMatrix;
 using Rcpp::NumericVector;
+using Rcpp::IntegerVector;
 using Rcpp::_;
 using Rcpp::clone;
 
@@ -434,34 +436,26 @@ int Cluster::multinom(const NumericVector &p, Random &ran) {
   return 0;
 }
 
-void Cluster::initialise(Matrix<int> &isolate) {
+void Cluster::initialise(const IntegerMatrix &isolate) {
   init = true;
 
-  Rcpp::Rcout << "Running initialise..." << std::endl;
-
   /* Format assumed is ST <genes> SOURCE */
-  nloc = isolate.ncols() - 2;
-  ng   = 0;
-  for (int i = 0; i < isolate.nrows(); i++) {
-    const int sc = isolate[i][nloc+1];
-    if (sc > ng)
-      ng = sc;
-  }
+  nloc = isolate.ncol() - 2;
+  IntegerMatrix::ConstColumn source_col = isolate(_, nloc+1);
+  ng   = max(source_col);
 
   // find maximum ST, maximum allele for each locus, the total in each source group, humans, and across all sources
-  int maxST = -1;			///< maximum ST
-  Vector<int> maxallele(nloc,-1);	///< maximum allele number for each locus
+  int maxST = max(isolate(_,0));			///< maximum ST
+  IntegerVector maxallele(nloc, -1);	///< maximum allele number for each locus
+  for (int j = 1; j <= nloc; j++) {
+    maxallele[j-1] = max(isolate(_, j));
+  }
   size = Vector<int>(ng+1,0);	///< size[0:(ng-1)] is total in each source group, size[ng] is total in source groups
+  // TODO: Can probably vectorise this
   int nhuman = 0; 		///< number of human isolates
-  for (int i = 0; i < isolate.nrows(); i++) {
-    if (isolate[i][0] > maxST)
-      maxST = isolate[i][0];
-    for (int j = 1; j <= nloc; j++) {
-      if (isolate[i][j] > maxallele[j-1])
-        maxallele[j-1] = isolate[i][j];
-    }
-    if (isolate[i][nloc+1] > 0) {
-      ++size[isolate[i][nloc+1]-1];
+  for (int i = 0; i < source_col.size(); i++) {
+    if (source_col[i] > 0) {
+      ++size[source_col[i]-1];
       ++size[ng];
     }
     else
@@ -470,16 +464,16 @@ void Cluster::initialise(Matrix<int> &isolate) {
   Rcpp::Rcout << "Maximum ST is " << maxST << " total isolates is " << size[ng] << std::endl;
 
   // map STs to their numbers
-  Matrix<int> aprofile(MIN(maxST,isolate.nrows()),nloc+1,-1);
-  Vector<int> STwhere(maxST+1,-1);
+  Matrix<int> aprofile(std::min(maxST,isolate.nrow()), nloc+1, -1);
+  IntegerVector STwhere(maxST+1,-1);
   int NST = 0;
-  for (int i=0; i < isolate.nrows(); i++) {
-    const int lab = isolate[i][0];
+  for (int i=0; i < isolate.nrow(); i++) {
+    const int lab = isolate(i,0);
     // have we seen this one before?
     if (STwhere[lab] == -1) {
       // nope - add it
       for (int j = 0; j < nloc; j++)
-        aprofile[NST][j] = isolate[i][j+1];
+        aprofile[NST][j] = isolate(i, j+1);
       STwhere[lab] = NST;
       ++NST;
     }
@@ -488,12 +482,12 @@ void Cluster::initialise(Matrix<int> &isolate) {
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Create the matrix of human isolates
-  human.resize(nhuman,nloc);
+  human.resize(nhuman, nloc);
   int ih = 0;
-  for (int i=0; i < isolate.nrows(); i++) {
-    if (isolate[i][nloc+1] == 0) {
+  for (int i=0; i < isolate.nrow(); i++) {
+    if (isolate(i, nloc+1) == 0) {
       for (int j = 0; j < nloc; j++) {
-        human[ih][j] = isolate[i][j+1];
+        human[ih][j] = isolate(i, j+1);
       }
       ++ih;
     }
@@ -511,9 +505,9 @@ void Cluster::initialise(Matrix<int> &isolate) {
   Matrix<int> niso(NST,ng+1,0);	///< number of each ST in each group, niso[,ng] is number of each ST in all groups
   size = Vector<int>(ng+1,0);	///< number of STs in each group, size[ng] is number of STs
   nST = Vector<int>(ng+1,0);	///< number of unique STs in each group, nST[ng] is number of unique STs
-  for (int i = 0; i < isolate.nrows(); i++) {
-    const int lab = isolate[i][0];
-    const int gp  = isolate[i][nloc+1]-1;
+  for (int i = 0; i < isolate.nrow(); i++) {
+    const int lab = isolate(i,0);
+    const int gp  = isolate(i,nloc+1)-1;
     const int wh  = STwhere[lab];
     if (gp >= 0) {
       if (niso[wh][gp] == 0) ++nST[gp];

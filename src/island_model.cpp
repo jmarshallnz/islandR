@@ -9,18 +9,9 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
 
-  // convert our isolate matrix to the appropriate format
-  myutils::Matrix<int> iso(isolates.nrow(), isolates.ncol());
-
-  for (size_t i = 0; i < isolates.nrow(); i++) {
-    for (size_t j = 0; j < isolates.ncol(); j++) {
-      iso[i][j] = isolates(i,j);
-    }
-  }
-
   // create model class
   Cluster clust;
-  clust.initialise(iso);
+  clust.initialise(isolates);
 
   double alpha = 1.0;
   double beta  = 1.0;

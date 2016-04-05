@@ -36,7 +36,7 @@ public:
 		same = NULL;
 		ksame = NULL;
 	}
-  void initialise(myutils::Matrix<int> &isolates);
+  void initialise(const Rcpp::IntegerMatrix &isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, and runs 100 side-chains to infer F given M and R
 	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran);
@@ -90,8 +90,6 @@ public:
 	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
 	void precalc();
-	template<typename T> void pSWAP(myutils::Vector<T> &a, myutils::Vector<T> &b);
-	template<typename T> void pSWAP(myutils::Matrix<T> &a, myutils::Matrix<T> &b);
 };
 
 #endif//_CLUSTER_H_
