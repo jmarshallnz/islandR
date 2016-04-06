@@ -8,7 +8,7 @@ st_fit_island(formula, sequences, non_primary = "Human", iters = 10000,
   data)
 }
 \arguments{
-\item{formula}{A formula of the form Genotype ~ Source}
+\item{formula}{A formula of the form Source ~ Genotype}
 
 \item{sequences}{A formula of the form ~ASP + GLN + GLT specifying columns for the allelic profile of each type}
 
