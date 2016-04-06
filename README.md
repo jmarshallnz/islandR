@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/jmarshallnz/islandR.svg?branch=master)](https://travis-ci.org/jmarshallnz/islandR)
+[![Build Status](https://travis-ci.org/jmarshallnz/islandR.svg?branch=master)](https://travis-ci.org/jmarshallnz/islandR) [![Coverage Status](https://img.shields.io/codecov/c/github/jmarshallnz/islandR/master.svg)](https://codecov.io/github/jmarshallnz/islandR?branch=master)
 
 # islandR
 
