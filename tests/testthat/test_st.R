@@ -15,3 +15,13 @@ test_that("st_fit gives correct types", {
   expect_equal(st$sources, dimnames(st$sampling_distribution)[[2]])
 })
 
+test_that("st_fit plots correctly", {
+  p = plot(st)
+  expect_equal(length(p), length(st$types))
+})
+
+test_that("st_fit summary", {
+  s = summary(st)
+  expect_equal(nrow(s), length(st$types))
+  expect_equal(colnames(s), st$sources)
+})
