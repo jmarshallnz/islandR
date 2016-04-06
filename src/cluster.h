@@ -2,7 +2,6 @@
 #define _CLUSTER_H_
 
 #include <Rcpp.h>
-#include <map>
 #include "random.h"
 
 class Cluster {
@@ -31,7 +30,7 @@ class Cluster {
 public:
   // output stuff
   Rcpp::NumericMatrix evolution_traces;
-  std::map<int, Rcpp::NumericMatrix> human_likelihoods;
+  Rcpp::List human_likelihoods;
 
 	Cluster() {
 		init = false;

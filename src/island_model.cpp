@@ -26,12 +26,5 @@ List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
   // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
   clust.mcmc6f(alpha, beta, gamma, niter, thin, ran);
 
-  // convert our map of output shit into a list
-  List ret;
-  for (std::map<int, NumericMatrix>::iterator it = clust.human_likelihoods.begin();
-       it != clust.human_likelihoods.end(); ++it) {
-    std::stringstream s; s << it->first;
-    ret[s.str()] = it->second;
-  }
-  return ret;
+  return clust.human_likelihoods;
 }

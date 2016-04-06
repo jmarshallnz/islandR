@@ -250,7 +250,8 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  }
 			}
 
-			human_likelihoods[iter] = phi;
+		  std::stringstream s; s << iter;
+			human_likelihoods[s.str()] = phi;
 		}
 		else {
 			int move = multinom(proprob, ran);			//	random sweep for proposing moves
