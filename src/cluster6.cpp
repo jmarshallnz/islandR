@@ -259,12 +259,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			human_likelihoods[s.str()] = phi;
 		}
 		else {
-			int move = multinom(proprob, ran);			//	random sweep for proposing moves
+			int move = multinom(proprob);			//	random sweep for proposing moves
 			switch(move) {
 				case 0:	{// update A: switching proposal
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
-					int id1 = ran.discrete(0,ng);		// Principal elements of mig matrix to change
-					int id2 = ran.discrete(0,ng-1);
+					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
+					int id1 = sample(ng+1);		// Principal elements of mig matrix to change
+					int id2 = sample(ng);
 					if(id2==id1) id2 = ng;
 					if(a_constraint && (id1==popid || id2==popid)) break;
 					// Need only update one row of a
@@ -293,8 +293,8 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 1:	{// update A: log-normal proposal
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
-					int id = ran.discrete(0,ng);		// Principal element of mig matrix to change
+					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
+					int id = sample(ng+1);		// Principal element of mig matrix to change
 					// Need only update one row of a
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
@@ -327,7 +327,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 4: {// update r (switching move)
-					int popid = ran.discrete(0,ng-1);
+					int popid = sample(ng);
 				  // Need only update one row of r
 				  NumericMatrix::Row rr = r(popid,_);
 				  NumericVector rr_prop = rr;
@@ -352,8 +352,8 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 5:	{// update r (log-normal move)
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "rec" parameter
-					int id = ran.discrete(0,1);			// Change one or other of the gamma components
+					int popid = sample(ng);	// Choose the source for which to change the "rec" parameter
+					int id = sample(2);			// Change one or other of the gamma components
 					// Need only update one row of r
 					NumericMatrix::Row rr = r(popid,_);
 					NumericVector rr_prop = rr;
@@ -432,8 +432,13 @@ Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
   return b;
 }
 
-int Cluster::multinom(const NumericVector &p, myutils::Random &ran) {
-  double U = ran.U();
+int Cluster::sample(int n) {
+  double U = R::runif(0, 1);
+  return U * n;
+}
+
+int Cluster::multinom(const NumericVector &p) {
+  double U = R::runif(0, 1);
   for (int i = 0; i < p.size(); i++) {
     if ((U-=p[i]) <= 0.0)
       return i;

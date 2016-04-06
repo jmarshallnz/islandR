@@ -71,7 +71,9 @@ public:
 		delete[] ksame;
 	}
 
-	int multinom(const Rcpp::NumericVector &p, myutils::Random &ran);
+	int multinom(const Rcpp::NumericVector &p);
+	int sample(int n);
+
 	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 
