@@ -156,6 +156,7 @@ public:
 	};
 #else
 	/*Subscript operator*/inline T* operator[](int pos){return element[pos];};
+	/*Subscript operator*/inline T* operator[](int pos) const {return element[pos];};
 #endif
 
 	/*Matrix multiplication*/

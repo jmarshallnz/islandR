@@ -2,30 +2,23 @@
 #define _CLUSTER_H_
 
 #include "myutils.h"
-#include "mydouble.h"
 #include <map>
 
 class Cluster {
 	int ng;							// # groups
   myutils::Vector< myutils::Matrix<int> > MLST;		// haps for each
   myutils::Vector<int> size;				// size of each
-  myutils::Vector<mydouble> SIZE;			// size of each
   myutils::Vector<int> nST;				// # unique STs in each
   myutils::Matrix<int> nalleles;			// nalleles[i][j] # unique alleles in group i at locus j
   myutils::Vector< myutils::Vector<double> > FREQ;		// freq of STs in each group
   myutils::Vector< myutils::Vector<double> > ABUN;		// abundance of STs in each group
-  myutils::Vector< myutils::Vector<mydouble> > freq;	// freq of STs in each group
-  myutils::Vector< myutils::Vector<mydouble> > abun;	// abundance of STs in each group
   myutils::Matrix< myutils::Vector<double> > acount;	// acount[i][j][k] gives the count, in pop i, and locus j, of allele k
-  mydouble one;
 
   int nloc;						// # loci
 	bool init;
 
 	myutils::Matrix<int> human;				// those sampled from humans
 
-	mydouble punique;
-	myutils::Vector<mydouble> puniq,psame,pdiff;
 	myutils::Matrix<bool> human_unique;
 	myutils::Vector< myutils::Matrix<bool> > beast_unique;
 	bool ****same;
@@ -39,7 +32,6 @@ public:
 	Cluster() {
 		init = false;
 		nloc = 7;
-		one = 1.0;
 		same = NULL;
 		ksame = NULL;
 	}
@@ -86,14 +78,14 @@ public:
 	}
 
 	int multinom(myutils::Vector<double> &p, myutils::Random &ran);
-	mydouble likHi6(const int id, const int i, myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b, myutils::Matrix<double> &r);
-	mydouble known_source_lik6_composite(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b, myutils::Matrix<double> &r);
+	double likHi6(const int id, const int i, const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
+	double known_source_loglik(const myutils::Matrix<double> &a, const myutils::Matrix< myutils::Vector<double> > &b, const myutils::Matrix<double> &r);
 
 	void recalc_b(myutils::Matrix<double> &a, myutils::Matrix< myutils::Vector<double> > &b);
-	void calc_A(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A);
-	void calc_Ai(myutils::Matrix<mydouble> &a, myutils::Matrix<double> &A, const int i);
-	void calc_R(myutils::Matrix<mydouble> &r, myutils::Matrix<double> &R);
-	void calc_Ri(myutils::Matrix<mydouble> &r, myutils::Matrix<double> &R, const int i);
+	void calc_A(myutils::Matrix<double> &a, myutils::Matrix<double> &A);
+	void calc_Ai(myutils::Matrix<double> &a, myutils::Matrix<double> &A, const int i);
+	void calc_R(myutils::Matrix<double> &r, myutils::Matrix<double> &R);
+	void calc_Ri(myutils::Matrix<double> &r, myutils::Matrix<double> &R, const int i);
 	void precalc();
 	template<typename T> void pSWAP(myutils::Vector<T> &a, myutils::Vector<T> &b);
 	template<typename T> void pSWAP(myutils::Matrix<T> &a, myutils::Matrix<T> &b);

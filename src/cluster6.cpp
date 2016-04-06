@@ -7,109 +7,95 @@
 
 using namespace myutils;
 
-mydouble Cluster::known_source_lik6_composite(Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
-#if defined(_MODEL4)
-	return known_source_lik4_composite(a,b);
-#elif defined(_FLAT_LIKELIHOOD)
-	return mydouble(1.0);
-#endif
-	int i,j,ii,jj,l;
-	mydouble lik = 1.0;
+double Cluster::known_source_loglik(const Matrix<double> &A, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
+	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
-	for(i=0;i<ng;i++) {
-		punique = mydouble(a[i][ng]);
-		for(j=0;j<nST[i];j++) {
-			mydouble ncopiesj = ABUN[i][j];
-			mydouble l_j(0.0);
-			for(l=0;l<nloc;l++) {
+	for (int i = 0; i < ng; i++) {
+		double punique = A[i][ng];
+		for (int j = 0; j < nST[i]; j++) {
+			double ncopiesj = ABUN[i][j];
+			std::vector<double> psame(nloc);
+			std::vector<double> pdiff(nloc);
+			for (int l = 0; l < nloc; l++) {
 				int allele = MLST[i][j][l];
 				double ac = acount[i][l][allele];
 				double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-				double bk = b[i][l][allele] - a[i][i]*ac + a[i][i]*ac_;
-				double b_ = r[i][0] * bk + r[i][1] * (1.0-a[i][ng]);// if no rec then must be same as CF (barring mutation)
+				double bk = b[i][l][allele] - A[i][i]*ac + A[i][i]*ac_;
+				double b_ = r[i][0] * bk + r[i][1] * (1.0-A[i][ng]);// if no rec then must be same as CF (barring mutation)
 				if(fabs(b_)<1.0e-7) {
 					b_ = 0.0;
 				}
-				psame[l] = mydouble(b_);
-				b_ = r[i][0] * bk;	// different so must have been recombination  Rcpp::Rcout << "Running initialise..." << std::endl;
+				psame[l] = b_;
+				b_ = r[i][0] * bk;	// different so must have been recombination
 
 				if(fabs(b_)<1.0e-7) {
 					b_ = 0.0;
 				}
-				pdiff[l] = mydouble(b_);
+				pdiff[l] = b_;
 			}
-			for(ii=0;ii<ng;ii++) {						//	Cycle through source of the clonal frame
-				mydouble l_ii(0.0);
-				mydouble mii(a[i][ii]/(1.0-a[i][ng]));
-				for(jj=0;jj<nST[ii];jj++) {				//	Cycle through each ST from that source
-					mydouble ncopiesjj = (i==ii && j==jj) ? abun[ii][jj]-MIN(abun[ii][jj],one)
-						: abun[ii][jj];
-					mydouble l_jj = mii;
+			double l_j = 0.0;
+			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
+				double l_ii = 0.0;
+				double mii = A[i][ii]/(1.0-A[i][ng]);
+				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
+					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-MIN(ABUN[ii][jj],1.0)
+						: ABUN[ii][jj];
+					double l_jj = mii;
 					bool *BEAST_UNIQUE = beast_unique[i][j];
 					bool *SAME = ksame[i][j][ii][jj];
-					mydouble *PDIFF = pdiff.element;
-					mydouble *PSAME = psame.element;
-					for(l=0;l<nloc;l++,BEAST_UNIQUE++,SAME++,PDIFF++,PSAME++) {
+					for (int l = 0; l < nloc; l++, BEAST_UNIQUE++, SAME++) {
 						if(*BEAST_UNIQUE) {				// new allele (allow some rounding error)
 							l_jj *= punique;
 						}
 						else if(*SAME) {				// previously observed and same as CF
-							l_jj *= *PSAME;
+							l_jj *= psame[l];
 						}
 						else {							// previously observed but different to CF
-							l_jj *= *PDIFF;
+							l_jj *= pdiff[l];
 						}
 					}
 					l_ii += l_jj * ncopiesjj;
 				}
-				l_j += l_ii / SIZE[ii];
+				l_j += l_ii / size[ii];
 			}
-			lik *= l_j^ncopiesj;
+			loglik += log(l_j) * ncopiesj;
 		}
 	}
-	return lik;
+	return loglik;
 }
 
-mydouble Cluster::likHi6(const int id, const int i, Matrix<double> &a, Matrix< Vector<double> > &b, Matrix<double> &r) {
-#if defined(_MODEL4)
-	return likHi4(id,i,a,b);
-#elif defined(_FLAT_LIKELIHOOD)
-	return mydouble(1.0);
-#endif
-	int ii,jj,l;
-/// NOTE: Little a in this function is A everywhere else!!!
+double Cluster::likHi6(const int id, const int i, const Matrix<double> &A, const Matrix< Vector<double> > &b, const Matrix<double> &r) {
+	std::vector<double> pdiff(nloc);
+	std::vector<double> psame(nloc);
 
-//	punique = mydouble(a[i][ng]);						// MAKE SURE THIS IS SET BEFORE CALLING likHi6()
-	for(l=0;l<nloc;l++) {
+	double puniq = A[i][ng]; // mutation rate
+	for (int l = 0; l < nloc; l++) {
 		int human_allele = human[id][l];
-		pdiff[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele],0.0));
-		psame[l] = mydouble(MAX(r[i][0] * b[i][l][human_allele] + r[i][1] * (1.0-a[i][ng]),0.0));
+		pdiff[l] = MAX(r[i][0] * b[i][l][human_allele],0.0);
+		psame[l] = MAX(r[i][0] * b[i][l][human_allele] + r[i][1] * (1.0-A[i][ng]),0.0);
 	}
-	mydouble lik(0.0);
-	for(ii=0;ii<ng;ii++) {								// Cycle through source of the clonal frame
-		mydouble mii(a[i][ii]/(1.0-a[i][ng]));
-		mydouble l_ii(0.0);
-		for(jj=0;jj<nST[ii];jj++) {
-			mydouble l_jj = mii;						//	Cycle through each ST from that source
+	double lik = 0.0;
+	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
+		double mii = A[i][ii]/(1.0-A[i][ng]);
+		double l_ii = 0.0;
+		for (int jj = 0; jj <nST[ii]; jj++) {
+			double l_jj = mii;						//	Cycle through each ST from that source
 			bool* HUMAN_UNIQUE = human_unique[id];
 			bool* SAME = same[id][ii][jj];
-			mydouble* PSAME = psame.element;
-			mydouble* PDIFF = pdiff.element;
-			for(l=0;l<nloc;l++,HUMAN_UNIQUE++,SAME++,PSAME++,PDIFF++) {
+			for(int l=0; l<nloc; l++, HUMAN_UNIQUE++, SAME++) {
 				if(*HUMAN_UNIQUE) {						// new allele (allow some rounding error)
-					l_jj *= punique;
+					l_jj *= puniq;
 				}
 				else if(*SAME) {						// previously observed and same as CF
-					l_jj *= *PSAME;
+					l_jj *= psame[l];
 				}
 				else {									// previously observed but different to CF
-					l_jj *= *PDIFF;
+					l_jj *= pdiff[l];
 				}
 			}
-			mydouble &ncopiesjj = abun[ii][jj];
-			l_ii += l_jj * ncopiesjj;
+			l_ii += l_jj * ABUN[ii][jj];
 		}
-		lik += l_ii / SIZE[ii];
+		lik += l_ii / size[ii];
 	}
 	return lik;
 }
@@ -139,9 +125,6 @@ void Cluster::precalc() {
                             || acount[ng][l][human_allele]==0);
 		}
 	}
-	puniq = Vector<mydouble>(nloc);
-	psame = Vector<mydouble>(nloc);
-	pdiff = Vector<mydouble>(nloc);
 
 	ksame = new bool****[ng];
 	for(int i = 0; i < ng; i++) {
@@ -166,7 +149,7 @@ void Cluster::precalc() {
 	}
 }
 
-void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik1, double lik2, double logalpha, int move, Matrix<double> &traces, int trace_row) {
+void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik, Matrix<double> &traces, int trace_row) {
   int col = 0;
   if (trace_row >= traces.nrows())
     return;
@@ -177,10 +160,7 @@ void append_traces(int iter, Matrix<double> &A, Matrix<double> &R, double lik1, 
   }
   for (int i = 0; i < R.nrows(); i++)
     traces[trace_row][col++] = R[i][0];
-  traces[trace_row][col++] = lik1;
-  traces[trace_row][col++] = lik2;
-  traces[trace_row][col++] = logalpha;
-  traces[trace_row][col++] = move;
+  traces[trace_row][col++] = lik;
 }
 
 /* This version uses the clonal frame version of the likelihood */
@@ -191,9 +171,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	/* Initialize the Markov chain */
 	int use = 0; int notuse = (int)!use;
 	Vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
-	Vector< Matrix<mydouble> > a(2);
-	a[use] = Matrix<mydouble>(ng,ng+2);		///<	Reparametrised migration matrix. a[,ng+1]=sum(a[,1:ng]), a[,ng]=mutation rate
-	a[notuse] = Matrix<mydouble>(ng,ng+2);
+	Vector< Matrix<double> > a(2);
+	a[use] = Matrix<double>(ng,ng+2);		///<	Reparametrised migration matrix. a[,ng+1]=sum(a[,1:ng]), a[,ng]=mutation rate
+	a[notuse] = Matrix<double>(ng,ng+2);
 	Vector< Matrix<double> > A(2);
 	A[use] = Matrix<double>(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
 	A[notuse] = Matrix<double>(ng,ng+1);
@@ -205,14 +185,14 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			}
 
 			if(!a_constraint) break;
-			mydouble amax = a[use][i][0];
+			double amax = a[use][i][0];
 			for(j=1;j<ng;j++) if(a[use][i][j]>amax) amax = a[use][i][j];
 			if(a[use][i][i]==amax) break;
 		}
 	}
 	calc_A(a[use],A[use]);	///< Does transformation to M
 
-	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(freq[grp][loc][i] * M[grp][j])
+	Vector< Matrix< Vector<double> > > b(2);	///< b[use][grp][loc][i] = sum_j(FREQ[grp][loc][i] * A[grp][j]) (where A = (1-mu)*M)
 	b[use] = Matrix< Vector<double> >(ng,nloc);
 	b[notuse] = Matrix< Vector<double> >(ng,nloc);
 	for(i=0;i<ng;i++) {
@@ -222,9 +202,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 	}
 	recalc_b(A[use],b[use]);
-	Vector< Matrix<mydouble> > r(2);	///< Reparameterised per-group recombination rates
-	r[use] = Matrix<mydouble>(ng,3);	///< r[u,grp,3] = sum(r[u,grp,1:2])
-	r[notuse] = Matrix<mydouble>(ng,3);
+	Vector< Matrix<double> > r(2);	///< Reparameterised per-group recombination rates
+	r[use] = Matrix<double>(ng,3);	///< r[u,grp,3] = sum(r[u,grp,1:2])
+	r[notuse] = Matrix<double>(ng,3);
 	Vector< Matrix<double> > R(2);
 	R[use] = Matrix<double>(ng,2);		///< R[u,grp,1:2] = r[u,grp,1:2]/r[u,grp,3]
 	R[notuse] = Matrix<double>(ng,2);
@@ -238,7 +218,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	calc_R(r[use],R[use]);
 
 	/* Storage for likelihoods */
-	mydouble likelihood = known_source_lik6_composite(A[use],b[use],R[use]);
+	double loglikelihood = known_source_loglik(A[use],b[use],R[use]);
 
 	/* Proposal probabilities */
 	Vector<double> proprob(6,0.0);
@@ -254,16 +234,15 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
-	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+4); // iter, A, r, loglik, loglik2, logalpha, move
+	evolution_traces.resize(niter/thin+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
 	int trace_row = 0;
-	append_traces(0, A[use], R[use], likelihood.LOG(), likelihood.LOG(), 0, NAN, evolution_traces, trace_row++);
+	append_traces(0, A[use], R[use], loglikelihood, evolution_traces, trace_row++);
 
 	clock_t start = clock(), current;
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 	Rcpp::Rcout << "Done 0 of " << niter << " iterations";
 
-	mydouble newlik, logalpha;
-	int iter, move;
+	int iter;
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = MAX((int)floor((double)niter/100.),1);
 	for(iter=0;iter<niter+burnin;iter++) {
@@ -279,8 +258,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  for(int h = 0; h < human.nrows(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            punique = A[use][j][ng];
-            phi[h][j] = likHi6(h,j,A[use],b[use],R[use]).LOG();
+            phi[h][j] = log(likHi6(h,j,A[use],b[use],R[use]));
           }
 			  }
 			}
@@ -288,9 +266,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			human_likelihoods[iter] = phi;
 		}
 		else {
-			newlik = likelihood;
-			logalpha = 1;
-			move = multinom(proprob,ran);			//	random sweep for proposing moves
+			int move = multinom(proprob,ran);			//	random sweep for proposing moves
 			switch(move) {
 				case 0:	{// update A: switching proposal
 					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
@@ -302,20 +278,19 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					A[notuse] = A[use];
 					SWAP(a[notuse][popid][id1],a[notuse][popid][id2]);
 					calc_Ai(a[notuse],A[notuse],popid);
-					logalpha = 1.0;
+					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
-					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[notuse],b[notuse],R[use]);
+					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -326,30 +301,29 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					int id = ran.discrete(0,ng);		// Principal element of mig matrix to change
 					a[notuse] = a[use];
 					A[notuse] = A[use];
-					mydouble *ap = a[use][popid], *ap_prime = a[notuse][popid];
-					ap_prime[id].setlog(ran.normal(ap[id].LOG(),sigma_a));
+					double *ap = a[use][popid], *ap_prime = a[notuse][popid];
+					ap_prime[id] = exp(ran.normal(log(ap[id]),sigma_a));
 					bool reject = false;
 					if(a_constraint) {
-						mydouble ap_primemax = ap_prime[0];
+						double ap_primemax = ap_prime[0];
 						for(j=1;j<ng;j++) if(ap_prime[j]>ap_primemax) ap_primemax = ap_prime[j];
 						if(ap_prime[popid]!=ap_primemax) reject = true;
 					}
 					if(reject) break;
 					calc_Ai(a[notuse],A[notuse],popid);
 					// Prior-Hastings ratio
-					logalpha.setlog(ap[id].todouble()-ap_prime[id].todouble());
-					logalpha *= (ap_prime[id]/ap[id])^(beta);
+					double logalpha = ap[id] - ap_prime[id];
+					logalpha += beta * log(ap_prime[id]/ap[id]);
 					// Likelihood ratio
 					recalc_b(A[notuse],b[notuse]);
-					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[notuse],b[notuse],R[use]);
+					double newloglik = known_source_loglik(A[notuse],b[notuse],R[use]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						r[notuse] = r[use];
 						R[notuse] = R[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -361,20 +335,19 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					R[notuse] = R[use];
 					SWAP(r[notuse][popid][0],r[notuse][popid][1]);
 					calc_Ri(r[notuse],R[notuse],popid);
-					logalpha = 1.0;
+					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Symmetric proposal so Hastings ratio equals 1
 					// Likelihood ratio
-					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[use],b[use],R[notuse]);
+					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -385,23 +358,22 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					int id = ran.discrete(0,1);			// Change one or other of the gamma components
 					r[notuse] = r[use];
 					R[notuse] = R[use];
-					mydouble *rp = r[use][popid], *rp_prime = r[notuse][popid];
-					rp_prime[id].setlog(ran.normal(rp[id].LOG(),sigma_r));
+					double *rp = r[use][popid], *rp_prime = r[notuse][popid];
+					rp_prime[id] = exp(ran.normal(log(rp[id]),sigma_r));
 					calc_Ri(r[notuse],R[notuse],popid);
 					// Prior-Hastings ratio
-					logalpha.setlog(rp[id].todouble()-rp_prime[id].todouble());
-					logalpha *= (rp_prime[id]/rp[id])^(gamma_);
+					double logalpha = rp[id] - rp_prime[id];
+					logalpha += gamma_ * log(rp_prime[id]/rp[id]);
 					// Likelihood ratio
-					mydouble oldlik = likelihood;
-					newlik = known_source_lik6_composite(A[use],b[use],R[notuse]);
+					double newloglik = known_source_loglik(A[use],b[use],R[notuse]);
 
-					logalpha *= newlik / oldlik;
-					if(logalpha.LOG()>=0.0 || ran.U()<logalpha.todouble()) {	// accept
+					logalpha += newloglik - loglikelihood;
+					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
 						a[notuse] = a[use];
 						A[notuse] = A[use];
 						b[notuse] = b[use];
 						SWAP(use,notuse);
-						likelihood = newlik;
+						loglikelihood = newloglik;
 					}
 					else { // reject
 					}
@@ -415,7 +387,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 		/* output thinned traces of island model fit */
 		if(iter >= burnin && (iter+1)%thin==0)
-		  append_traces(iter+1, A[use], R[use], likelihood.LOG(), newlik.LOG(), logalpha.LOG(), move, evolution_traces, trace_row++);
+		  append_traces(iter+1, A[use], R[use], loglikelihood, evolution_traces, trace_row++);
 
 		if((current=clock())>next) {
 		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
@@ -428,53 +400,53 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 // helper stuff below here
 
 // Assumes A is correctly sized
-void Cluster::calc_A(Matrix<mydouble> &a, Matrix<double> &A) {
+void Cluster::calc_A(Matrix<double> &a, Matrix<double> &A) {
   int i,j;
   const int n = a.ncols()-1;
   for(i=0;i<a.nrows();i++) {
     a[i][n] = 0.0;
     for(j=0;j<n;j++) a[i][n] += a[i][j];
-    for(j=0;j<n;j++) A[i][j] = (a[i][j]/a[i][n]).todouble();
+    for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
   }
 }
 
 // Assumes A is correctly sized
-void Cluster::calc_Ai(Matrix<mydouble> &a, Matrix<double> &A, const int i) {
+void Cluster::calc_Ai(Matrix<double> &a, Matrix<double> &A, const int i) {
   int j;
   const int n = a.ncols()-1;
   a[i][n] = 0.0;
   for(j=0;j<n;j++) a[i][n] += a[i][j];
-  for(j=0;j<n;j++) A[i][j] = (a[i][j]/a[i][n]).todouble();
+  for(j=0;j<n;j++) A[i][j] = a[i][j]/a[i][n];
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_R(Matrix<mydouble> &r, Matrix<double> &R) {
+void Cluster::calc_R(Matrix<double> &r, Matrix<double> &R) {
   int i,j;
   const int n = r.ncols()-1;
   for(i=0;i<r.nrows();i++) {
     r[i][n] = 0.0;
     for(j=0;j<n;j++) r[i][n] += r[i][j];
-    for(j=0;j<n;j++) R[i][j] = (r[i][j]/r[i][n]).todouble();
+    for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
   }
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_Ri(Matrix<mydouble> &r, Matrix<double> &R, const int i) {
+void Cluster::calc_Ri(Matrix<double> &r, Matrix<double> &R, const int i) {
   int j;
   const int n = r.ncols()-1;
   r[i][n] = 0.0;
   for(j=0;j<n;j++) r[i][n] += r[i][j];
-  for(j=0;j<n;j++) R[i][j] = (r[i][j]/r[i][n]).todouble();
+  for(j=0;j<n;j++) R[i][j] = r[i][j]/r[i][n];
 }
 
-void Cluster::recalc_b(Matrix<double> &a, Matrix< Vector<double> > &b) {
+void Cluster::recalc_b(Matrix<double> &A, Matrix< Vector<double> > &b) {
   int i,j,k,l;
   for(i=0;i<ng;i++) {
     for(j=0;j<nloc;j++) {
       for(k=0;k<acount[i][j].size();k++) {
         b[i][j][k] = 0.0;
         for(l=0;l<ng;l++) {
-          b[i][j][k] += acount[l][j][k] * a[i][l];
+          b[i][j][k] += acount[l][j][k] * A[i][l];
           //					bk[i][j][k] += (acount[l][j][k]*(double)size[l]-1.0)/(double)(size[l]-1) * a[i][l];
         }
       }
@@ -582,9 +554,6 @@ void Cluster::initialise(Matrix<int> &isolate) {
       ++size[ng];
     }
   }
-  SIZE = Vector<mydouble>(ng+1);	///< number of isolates in each group, SIZE[ng] is number of STs
-  for (int i = 0;i <= ng; i++)
-    SIZE[i] = mydouble((double)size[i]);
 
   /* Allocate memory for allele counts */
   acount.resize(ng+1,nloc);	///< counts of alleles in each group at each loci
@@ -597,14 +566,10 @@ void Cluster::initialise(Matrix<int> &isolate) {
   }
   /* Record the allelic profile for each unique ST in each group */
   MLST.resize(ng);		///< MLST[group,unique_st,loci] -> MLST[group] is profile of each unique ST
-  freq.resize(ng);		///< freq[group,unique_st] proportion of unique_st in group
-  abun.resize(ng);		///< abun[group,unique_st] number of unique_st in group
-  FREQ.resize(ng);		///< FREQ[group,unique_st] same as freq but double
-  ABUN.resize(ng);		///< ABUN[group,unique_st] same as abun but double
+  FREQ.resize(ng);		///< FREQ[group,unique_st] proportion of unique_st in group
+  ABUN.resize(ng);		///< ABUN[group,unique_st] number of unique_st in group
   for (int i = 0; i < ng; i++) {
     MLST[i].resize(nST[i],nloc);
-    freq[i].resize(nST[i]);
-    abun[i].resize(nST[i]);
     FREQ[i].resize(nST[i]);
     ABUN[i].resize(nST[i]);
   }
@@ -616,8 +581,6 @@ void Cluster::initialise(Matrix<int> &isolate) {
         for (int j = 0; j < nloc; j++) { // copy across the MLST profile
           MLST[sc][ix[sc]][j] = aprofile[i][j];
         }
-        freq[sc][ix[sc]] = mydouble((double)ct/(double)size[sc]);
-        abun[sc][ix[sc]] = mydouble((double)ct);
         FREQ[sc][ix[sc]] = (double)ct/(double)size[sc];
         ABUN[sc][ix[sc]] = (double)ct;
         for(int j = 0; j < nloc; j++) { // for each loci
