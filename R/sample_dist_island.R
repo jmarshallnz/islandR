@@ -10,7 +10,7 @@ NULL
 #' other covariates on the cases.
 #'
 #' @export
-#' @param formula A formula of the form Genotype ~ Source
+#' @param formula A formula of the form Source ~ Genotype
 #' @param sequences A formula of the form ~ASP + GLN + GLT specifying columns for the allelic profile of each type
 #' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
