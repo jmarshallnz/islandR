@@ -19,15 +19,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // island
-List island(IntegerMatrix isolates, int niter, int seed);
-RcppExport SEXP islandR_island(SEXP isolatesSEXP, SEXP niterSEXP, SEXP seedSEXP) {
+List island(IntegerMatrix isolates, int niter);
+RcppExport SEXP islandR_island(SEXP isolatesSEXP, SEXP niterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< IntegerMatrix >::type isolates(isolatesSEXP);
     Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
-    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
-    __result = Rcpp::wrap(island(isolates, niter, seed));
+    __result = Rcpp::wrap(island(isolates, niter));
     return __result;
 END_RCPP
 }

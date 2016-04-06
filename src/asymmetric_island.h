@@ -2,9 +2,8 @@
 #define _CLUSTER_H_
 
 #include <Rcpp.h>
-#include "random.h"
 
-class Cluster {
+class Island {
   // Not very efficient 2d,3d array class generated from vectors
   typedef std::vector< std::vector<double> > NumericArray2;
   typedef std::vector< std::vector<std::vector<double> > > NumericArray3;
@@ -32,7 +31,7 @@ public:
   Rcpp::NumericMatrix evolution_traces;
   Rcpp::List human_likelihoods;
 
-	Cluster() {
+  Island() {
 		init = false;
 		nloc = 7;
 		same = NULL;
@@ -41,9 +40,9 @@ public:
   void initialise(Rcpp::IntegerMatrix isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, and runs 100 side-chains to infer F given M and R
-	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran);
+	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin);
 
-	~Cluster() {
+	~Island() {
 		/* free memory */
 		for(int i = 0; i < human.nrow(); i++) {
 		  for(int ii = 0; ii < ng; ii++) {
@@ -71,7 +70,9 @@ public:
 		delete[] ksame;
 	}
 
-	int multinom(const Rcpp::NumericVector &p, myutils::Random &ran);
+	int multinom(const Rcpp::NumericVector &p);
+	int sample(int n);
+
 	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 

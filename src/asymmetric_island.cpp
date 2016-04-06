@@ -1,4 +1,4 @@
-#include "cluster.h"
+#include "asymmetric_island.h"
 
 #include <sstream> // for the stream stuff
 #include <iostream>
@@ -7,7 +7,7 @@
 
 using namespace Rcpp;
 
-double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
@@ -64,7 +64,7 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 
 	return loglik;
 }
 
-double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
@@ -100,7 +100,7 @@ double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const 
 	return lik;
 }
 
-void Cluster::precalc() {
+void Island::precalc() {
   // TODO: Much of this can probably be vectorised
 
 	human_unique = LogicalMatrix(human.nrow(), nloc);
@@ -172,37 +172,25 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran) {
+void Island::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin) {
 	precalc();
 
-	int i,j;
+  /* Initialize the random number generator */
+  RNGScope scope;
+
 	/* Initialize the Markov chain */
-	std::vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
 	NumericMatrix a(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
 	NumericMatrix A(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
-	const bool a_constraint = false;
-	for(i=0;i<ng;i++) {
-		while(true) {
-			for(j=0;j<ng+1;j++) {
-				a(i,j) = ran.gamma(1.,BETA[j]);
-			}
-
-			if(!a_constraint) break;
-			double amax = a(i,0);
-			for(j=1;j<ng;j++) if(a(i,j)>amax) amax = a(i,j);
-			if(a(i,i)==amax) break;
-		}
+	for (int i = 0; i < ng; i++) {
+	  a(i,_) = rgamma(ng+1, beta, 1.0);
 	}
 	calc_A(a, A);	///< Does transformation to M
 	NumericArray3 b = calc_b(A);
 
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
-	for(i=0;i<ng;i++) {
-		//r[i] = ran.beta(gamma_,gamma_);
-		for(j=0;j<2;j++) {
-			r(i,j) = ran.gamma(1.,gamma_);
-		}
+	for (int i = 0; i < ng; i++) {
+		r(i,_) = rgamma(2, gamma_, 1.0);
 	}
 	calc_R(r, R);
 
@@ -229,11 +217,10 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 	Rcout << "Done 0 of " << niter << " iterations";
 
-	int iter;
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = std::max((int)floor((double)niter/100.),1);
-	for(iter=0;iter<niter+burnin;iter++) {
-		if(iter>=burnin && (iter-burnin)%inc==0) {
+	for (int iter = 0; iter < niter+burnin; iter++) {
+		if (iter>=burnin && (iter-burnin)%inc==0) {
 
 			/* Now dump the likelihoods for this iteration.
 			   Weird that this has nothing to do with the thinning, which applies only
@@ -241,27 +228,24 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 			/* Compute likelihood of human isolate from each source */
 		  NumericMatrix phi(human.nrow(), ng);
-		  {
-			  for(int h = 0; h < human.nrow(); h++) {
-          // calculate the likelihood
-          for (int j = 0; j < ng; j++) {
-            phi(h,j) = likHi6(h, j, A, b, R);
-          }
-			  }
-			}
+		  for(int h = 0; h < human.nrow(); h++) {
+        // calculate the likelihood
+        for (int j = 0; j < ng; j++) {
+          phi(h,j) = likHi6(h, j, A, b, R);
+        }
+		  }
 
 		  std::stringstream s; s << iter;
 			human_likelihoods[s.str()] = phi;
 		}
 		else {
-			int move = multinom(proprob, ran);			//	random sweep for proposing moves
+			int move = multinom(proprob);			//	random sweep for proposing moves
 			switch(move) {
 				case 0:	{// update A: switching proposal
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
-					int id1 = ran.discrete(0,ng);		// Principal elements of mig matrix to change
-					int id2 = ran.discrete(0,ng-1);
+					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
+					int id1 = sample(ng+1);		// Principal elements of mig matrix to change
+					int id2 = sample(ng);
 					if(id2==id1) id2 = ng;
-					if(a_constraint && (id1==popid || id2==popid)) break;
 					// Need only update one row of a
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
@@ -277,7 +261,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
@@ -288,19 +272,13 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 1:	{// update A: log-normal proposal
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "mig" matrix
-					int id = ran.discrete(0,ng);		// Principal element of mig matrix to change
+					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
+					int id = sample(ng+1);		// Principal element of mig matrix to change
 					// Need only update one row of a
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
-					ar_prop[id] = exp(ran.normal(log(ar[id]), sigma_a));
-					bool reject = false;
-					if(a_constraint) {
-						double ap_primemax = ar_prop[0];
-						for(j=1;j<ng;j++) if(ar_prop[j]>ap_primemax) ap_primemax = ar_prop[j];
-						if(ar_prop[popid]!=ap_primemax) reject = true;
-					}
-					if(reject) break;
+					ar_prop[id] = R::rlnorm(log(ar[id]), sigma_a);
+
 					NumericMatrix A_prop(clone(A));
 					A_prop(popid,_) = normalise(ar_prop);
 					// Prior-Hastings ratio
@@ -311,7 +289,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
@@ -322,7 +300,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 4: {// update r (switching move)
-					int popid = ran.discrete(0,ng-1);
+					int popid = sample(ng);
 				  // Need only update one row of r
 				  NumericMatrix::Row rr = r(popid,_);
 				  NumericVector rr_prop = rr;
@@ -337,7 +315,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						rr = rr_prop;
 						R(popid,_) = R_prop(popid,_);
 						loglikelihood = newloglik;
@@ -347,12 +325,12 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				case 5:	{// update r (log-normal move)
-					int popid = ran.discrete(0,ng-1);	// Choose the source for which to change the "rec" parameter
-					int id = ran.discrete(0,1);			// Change one or other of the gamma components
+					int popid = sample(ng);	// Choose the source for which to change the "rec" parameter
+					int id = sample(2);			// Change one or other of the gamma components
 					// Need only update one row of r
 					NumericMatrix::Row rr = r(popid,_);
 					NumericVector rr_prop = rr;
-					rr_prop[id] = exp(ran.normal(log(rr[id]), sigma_r));
+					rr_prop[id] = R::rlnorm(log(rr[id]), sigma_r);
 					NumericMatrix R_prop = clone(R);
 					R_prop(popid,_) = normalise(rr_prop);
 					// Prior-Hastings ratio
@@ -362,7 +340,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						rr = rr_prop;
 						R(popid, _) = R_prop(popid, _);
 						loglikelihood = newloglik;
@@ -392,24 +370,24 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 // helper stuff below here
 
 // Assumes A is correctly sized
-void Cluster::calc_A(NumericMatrix &a, NumericMatrix &A) {
+void Island::calc_A(NumericMatrix &a, NumericMatrix &A) {
   for (int i = 0; i < a.nrow(); i++) {
     A(i,_) = normalise(a(i,_));
   }
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_R(NumericMatrix &r, NumericMatrix &R) {
+void Island::calc_R(NumericMatrix &r, NumericMatrix &R) {
   for (int i = 0; i < r.nrow(); i++) {
     R(i,_) = normalise(r(i,_));
   }
 }
 
-NumericVector Cluster::normalise(const NumericVector &x) {
+NumericVector Island::normalise(const NumericVector &x) {
   return x / sum(x);
 }
 
-Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
+Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {
   NumericArray3 b(ng);
   for(int i = 0; i < ng; i++) {
     b[i].resize(nloc);
@@ -427,8 +405,13 @@ Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
   return b;
 }
 
-int Cluster::multinom(const NumericVector &p, myutils::Random &ran) {
-  double U = ran.U();
+int Island::sample(int n) {
+  double U = R::runif(0, 1);
+  return U * n;
+}
+
+int Island::multinom(const NumericVector &p) {
+  double U = R::runif(0, 1);
   for (int i = 0; i < p.size(); i++) {
     if ((U-=p[i]) <= 0.0)
       return i;
@@ -437,7 +420,7 @@ int Cluster::multinom(const NumericVector &p, myutils::Random &ran) {
   return 0;
 }
 
-void Cluster::initialise(IntegerMatrix isolate) {
+void Island::initialise(IntegerMatrix isolate) {
   init = true;
 
   /* Format assumed is ST <genes> SOURCE */

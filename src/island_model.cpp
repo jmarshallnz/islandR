@@ -1,17 +1,17 @@
 #include <Rcpp.h>
 
-#include "cluster.h"
+#include "asymmetric_island.h"
 
 using namespace Rcpp;
 
 // run island model
 
 // [[Rcpp::export]]
-List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
+List island(IntegerMatrix isolates, int niter = 10000) {
 
   // create model class
-  Cluster clust;
-  clust.initialise(isolates);
+  Island island;
+  island.initialise(isolates);
 
   double alpha = 1.0;
   double beta  = 1.0;
@@ -19,12 +19,9 @@ List island(IntegerMatrix isolates, int niter = 10000, int seed = -5) {
 
   int thin  = 50;
 
-  myutils::Random ran;
-  ran.setseed(seed);
-
   // output traces. The thin here is how often we sample the evolution parameters.
   // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
-  clust.mcmc6f(alpha, beta, gamma, niter, thin, ran);
+  island.mcmc6f(alpha, beta, gamma, niter, thin);
 
-  return clust.human_likelihoods;
+  return island.human_likelihoods;
 }
