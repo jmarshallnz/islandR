@@ -245,7 +245,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 			  for(int h = 0; h < human.nrow(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
-            phi(h,j) = log(likHi6(h, j, A, b, R));
+            phi(h,j) = likHi6(h, j, A, b, R);
           }
 			  }
 			}

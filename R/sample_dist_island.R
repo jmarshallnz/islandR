@@ -70,7 +70,6 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
     x
   }
   out = lapply(out, set_names)
-  out = lapply(out, exp)
 
   # righto, now construct a useful object...
   x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(out), model = "island")
