@@ -2,26 +2,29 @@
 #define _CLUSTER_H_
 
 #include <Rcpp.h>
-#include "myutils.h"
 #include <map>
+#include "random.h"
 
 class Cluster {
-	int ng;							// # groups
-  myutils::Vector< myutils::Matrix<int> > MLST;		// haps for each
-  myutils::Vector<int> size;				// size of each
-  myutils::Vector<int> nST;				// # unique STs in each
-  myutils::Matrix<int> nalleles;			// nalleles[i][j] # unique alleles in group i at locus j
-  myutils::Vector< myutils::Vector<double> > FREQ;		// freq of STs in each group
-  myutils::Vector< myutils::Vector<double> > ABUN;		// abundance of STs in each group
-  myutils::Matrix< myutils::Vector<double> > acount;	// acount[i][j][k] gives the count, in pop i, and locus j, of allele k
+  // Not very efficient 2d,3d array class generated from vectors
+  typedef std::vector< std::vector<double> > NumericArray2;
+  typedef std::vector< std::vector<std::vector<double> > > NumericArray3;
+
+  int ng;							// # groups
+  std::vector< Rcpp::IntegerMatrix > MLST;		// haps for each
+  Rcpp::IntegerVector size;				// size of each
+  Rcpp::IntegerVector nST;				// # unique STs in each
+  NumericArray2 FREQ;		// freq of STs in each group
+  NumericArray2 ABUN;	  // abundance of STs in each group
+  NumericArray3 acount;	// acount[i][j][k] gives the count, in pop i, and locus j, of allele k
 
   int nloc;						// # loci
 	bool init;
 
-	myutils::Matrix<int> human;				// those sampled from humans
+	Rcpp::IntegerMatrix human;				// those sampled from humans
 
-	myutils::Matrix<bool> human_unique;
-	myutils::Vector< myutils::Matrix<bool> > beast_unique;
+	Rcpp::LogicalMatrix human_unique;
+	std::vector< Rcpp::LogicalMatrix > beast_unique;
 	bool ****same;
 	bool *****ksame;
 
@@ -36,23 +39,14 @@ public:
 		same = NULL;
 		ksame = NULL;
 	}
-  void initialise(const Rcpp::IntegerMatrix &isolates);
+  void initialise(Rcpp::IntegerMatrix isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, and runs 100 side-chains to infer F given M and R
 	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran);
 
 	~Cluster() {
-		if(init) {
-			int i,j;
-			for(i=0;i<ng;i++) {
-				for(j=0;j<nloc;j++) {
-					acount[i][j].resize(0);
-				}
-				MLST[i].resize(0,0);
-			}
-		}
 		/* free memory */
-		for(int i = 0; i < human.nrows(); i++) {
+		for(int i = 0; i < human.nrow(); i++) {
 		  for(int ii = 0; ii < ng; ii++) {
 		    for(int jj = 0; jj < nST[ii]; jj++) {
 		      delete[] same[i][ii][jj];
@@ -78,14 +72,11 @@ public:
 		delete[] ksame;
 	}
 
-	// Not very efficient 3d array class generated from vectors
-	typedef std::vector< std::vector<std::vector<double> > > Array3;
-
 	int multinom(const Rcpp::NumericVector &p, myutils::Random &ran);
-	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
-	double known_source_loglik(const Rcpp::NumericMatrix &A, const Array3 &b, const Rcpp::NumericMatrix &R);
+	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
+	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 
-	Array3 calc_b(const Rcpp::NumericMatrix &A);
+	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
 	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);
 	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);

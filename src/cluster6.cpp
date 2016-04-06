@@ -7,14 +7,13 @@
 
 using Rcpp::NumericMatrix;
 using Rcpp::IntegerMatrix;
+using Rcpp::LogicalMatrix;
 using Rcpp::NumericVector;
 using Rcpp::IntegerVector;
 using Rcpp::_;
 using Rcpp::clone;
 
-using namespace myutils;
-
-double Cluster::known_source_loglik(const NumericMatrix &A, const Array3 &b, const NumericMatrix &R) {
+double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
@@ -24,7 +23,7 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const Array3 &b, con
 			std::vector<double> psame(nloc);
 			std::vector<double> pdiff(nloc);
 			for (int l = 0; l < nloc; l++) {
-				int allele = MLST[i][j][l];
+				int allele = MLST[i](j, l);
 				double ac = acount[i][l][allele];
 				double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
 				double bk = b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
@@ -45,13 +44,13 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const Array3 &b, con
 				double l_ii = 0.0;
 				double mii = A(i,ii)/(1.0-A(i,ng));
 				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
-					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-MIN(ABUN[ii][jj],1.0)
+					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
 						: ABUN[ii][jj];
 					double l_jj = mii;
-					bool *BEAST_UNIQUE = beast_unique[i][j];
+					LogicalMatrix::Row BEAST_UNIQUE = beast_unique[i](j, _);
 					bool *SAME = ksame[i][j][ii][jj];
-					for (int l = 0; l < nloc; l++, BEAST_UNIQUE++, SAME++) {
-						if(*BEAST_UNIQUE) {				// new allele (allow some rounding error)
+					for (int l = 0; l < nloc; l++, SAME++) {
+						if (BEAST_UNIQUE[l]) {				// new allele (allow some rounding error)
 							l_jj *= punique;
 						}
 						else if(*SAME) {				// previously observed and same as CF
@@ -71,15 +70,15 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const Array3 &b, con
 	return loglik;
 }
 
-double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const Array3 &b, const NumericMatrix &R) {
+double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
 	double puniq = A(i,ng); // mutation rate
 	for (int l = 0; l < nloc; l++) {
-		int human_allele = human[id][l];
-		pdiff[l] = MAX(R(i,0) * b[i][l][human_allele],0.0);
-		psame[l] = MAX(R(i,0) * b[i][l][human_allele] + R(i,1) * (1.0-A(i,ng)),0.0);
+		int human_allele = human(id, l);
+		pdiff[l] = std::max(R(i,0) * b[i][l][human_allele],0.0);
+		psame[l] = std::max(R(i,0) * b[i][l][human_allele] + R(i,1) * (1.0-A(i,ng)),0.0);
 	}
 	double lik = 0.0;
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
@@ -87,10 +86,10 @@ double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const 
 		double l_ii = 0.0;
 		for (int jj = 0; jj <nST[ii]; jj++) {
 			double l_jj = mii;						//	Cycle through each ST from that source
-			bool* HUMAN_UNIQUE = human_unique[id];
+			LogicalMatrix::Row HUMAN_UNIQUE = human_unique(id, _);
 			bool* SAME = same[id][ii][jj];
-			for(int l=0; l<nloc; l++, HUMAN_UNIQUE++, SAME++) {
-				if(*HUMAN_UNIQUE) {						// new allele (allow some rounding error)
+			for(int l=0; l<nloc; l++, SAME++) {
+				if (HUMAN_UNIQUE[l]) {						// new allele (allow some rounding error)
 					l_jj *= puniq;
 				}
 				else if(*SAME) {						// previously observed and same as CF
@@ -108,28 +107,40 @@ double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const 
 }
 
 void Cluster::precalc() {
+  // TODO: Much of this can probably be vectorised
 
-	human_unique = Matrix<bool>(human.nrows(),nloc);
-	beast_unique = Vector< Matrix<bool> >(ng);
-	for (int i = 0; i < ng; i++)
-	  beast_unique[i] = Matrix<bool>(nST[i],nloc);
+	human_unique = LogicalMatrix(human.nrow(), nloc);
+  for(int i = 0; i < human.nrow(); i++) {
+    for(int l = 0; l < nloc; l++) {
+      int human_allele = human(i, l);
+      human_unique(i,l) = (human_allele>=acount[ng][l].size()
+                             || acount[ng][l][human_allele]==0);
+    }
+  }
 
-	same = new bool***[human.nrows()];
-	for(int i = 0; i < human.nrows(); i++) {
+  beast_unique.resize(ng);
+	for (int i = 0; i < ng; i++) {
+	  beast_unique[i] = LogicalMatrix(nST[i], nloc);
+	  for(int j = 0; j < nST[i]; j++) {
+	    for(int l = 0; l < nloc; l++) {
+	      int allele = MLST[i](j,l);
+	      double num = acount[ng][l][allele] * (double)size[ng];
+	      beast_unique[i](j,l) = (num < 1.1);
+	    }
+	  }
+	}
+
+	same = new bool***[human.nrow()];
+	for(int i = 0; i < human.nrow(); i++) {
 		same[i] = new bool**[ng];
 		for(int ii = 0; ii < ng; ii++) {
 			same[i][ii] = new bool*[nST[ii]];
 			for(int jj = 0; jj < nST[ii]; jj++) {
 				same[i][ii][jj] = new bool[nloc];
 				for(int l = 0; l < nloc; l++) {
-					same[i][ii][jj][l] = (human[i][l]==MLST[ii][jj][l]);
+					same[i][ii][jj][l] = (human(i, l) == MLST[ii](jj,l));
 				}
 			}
-		}
-		for(int l = 0; l < nloc; l++) {
-			int human_allele = human[i][l];
-		  human_unique[i][l] = (human_allele>=acount[ng][l].size()
-                            || acount[ng][l][human_allele]==0);
 		}
 	}
 
@@ -143,14 +154,9 @@ void Cluster::precalc() {
 				for(int jj = 0; jj < nST[ii]; jj++) {
 					ksame[i][j][ii][jj] = new bool[nloc];
 					for(int l = 0; l < nloc; l++) {
-						ksame[i][j][ii][jj][l] = (MLST[i][j][l] == MLST[ii][jj][l]);
+						ksame[i][j][ii][jj][l] = (MLST[i](j,l) == MLST[ii](jj,l));
 					}
 				}
-			}
-			for(int l = 0; l < nloc; l++) {
-				int allele = MLST[i][j][l];
-				double num = acount[ng][l][allele] * (double)size[ng];
-				beast_unique[i][j][l] = (num < 1.1);
 			}
 		}
 	}
@@ -172,7 +178,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, Random &ran) {
+void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran) {
 	precalc();
 
 	int i,j;
@@ -194,7 +200,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		}
 	}
 	calc_A(a, A);	///< Does transformation to M
-	Array3 b = calc_b(A);
+	NumericArray3 b = calc_b(A);
 
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
@@ -240,9 +246,9 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		     to the evolutionary parameters. */
 
 			/* Compute likelihood of human isolate from each source */
-		  NumericMatrix phi(human.nrows(), ng);
+		  NumericMatrix phi(human.nrow(), ng);
 		  {
-			  for(int h = 0; h < human.nrows(); h++) {
+			  for(int h = 0; h < human.nrow(); h++) {
           // calculate the likelihood
           for (int j = 0; j < ng; j++) {
             phi(h,j) = log(likHi6(h, j, A, b, R));
@@ -272,7 +278,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
 					// Likelihood ratio
-					Array3 b_prop = calc_b(A_prop);
+					NumericArray3 b_prop = calc_b(A_prop);
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
@@ -306,7 +312,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double logalpha = ar[id] - ar_prop[id];
 					logalpha += beta * log(ar_prop[id]/ar[id]);
 					// Likelihood ratio
-					Array3 b_prop = calc_b(A_prop);
+					NumericArray3 b_prop = calc_b(A_prop);
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
@@ -371,7 +377,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				default: {
-					error("Move not recognised");
+				  Rcpp::stop("Move not recognised");
 				}
 			}
 		}
@@ -408,8 +414,8 @@ NumericVector Cluster::normalise(const NumericVector &x) {
   return x / sum(x);
 }
 
-Cluster::Array3 Cluster::calc_b(const NumericMatrix &A) {
-  Array3 b(ng);
+Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
+  NumericArray3 b(ng);
   for(int i = 0; i < ng; i++) {
     b[i].resize(nloc);
     for(int j = 0; j < nloc; j++) {
@@ -426,70 +432,64 @@ Cluster::Array3 Cluster::calc_b(const NumericMatrix &A) {
   return b;
 }
 
-int Cluster::multinom(const NumericVector &p, Random &ran) {
+int Cluster::multinom(const NumericVector &p, myutils::Random &ran) {
   double U = ran.U();
   for (int i = 0; i < p.size(); i++) {
     if ((U-=p[i]) <= 0.0)
       return i;
   }
-  error("Problem in multinom");
+  Rcpp::stop("Problem in multinom");
   return 0;
 }
 
-void Cluster::initialise(const IntegerMatrix &isolate) {
+void Cluster::initialise(IntegerMatrix isolate) {
   init = true;
 
   /* Format assumed is ST <genes> SOURCE */
   nloc = isolate.ncol() - 2;
-  IntegerMatrix::ConstColumn source_col = isolate(_, nloc+1);
-  ng   = max(source_col);
+  IntegerMatrix::Column st     = isolate(_, 0);
+  IntegerMatrix loci           = isolate(_, Rcpp::Range(1, nloc));
+  IntegerMatrix::Column source = isolate(_, nloc+1);
+  ng   = max(source);
 
   // find maximum ST, maximum allele for each locus, the total in each source group, humans, and across all sources
-  int maxST = max(isolate(_,0));			///< maximum ST
-  IntegerVector maxallele(nloc, -1);	///< maximum allele number for each locus
-  for (int j = 1; j <= nloc; j++) {
-    maxallele[j-1] = max(isolate(_, j));
+  int maxST = max(st);			      ///< maximum ST
+  IntegerVector maxallele(nloc);	///< maximum allele number for each locus
+  for (int j = 0; j < nloc; j++) {
+    maxallele[j] = max(loci(_, j));
   }
-  size = Vector<int>(ng+1,0);	///< size[0:(ng-1)] is total in each source group, size[ng] is total in source groups
-  // TODO: Can probably vectorise this
-  int nhuman = 0; 		///< number of human isolates
-  for (int i = 0; i < source_col.size(); i++) {
-    if (source_col[i] > 0) {
-      ++size[source_col[i]-1];
-      ++size[ng];
-    }
-    else
-      ++nhuman;
+  // count the number of isolates
+  size = IntegerVector(ng);	///< size[0:(ng-1)] is total in each source group
+  for (int i = 0; i < ng; i++) {
+    size[i] = std::count(source.begin(), source.end(), i+1);
   }
+  size.push_back(sum(size)); ///< size[ng] is total in source groups
+  int nhuman = std::count(source.begin(), source.end(), 0);
+
   Rcpp::Rcout << "Maximum ST is " << maxST << " total isolates is " << size[ng] << std::endl;
 
   // map STs to their numbers
-  Matrix<int> aprofile(std::min(maxST,isolate.nrow()), nloc+1, -1);
-  IntegerVector STwhere(maxST+1,-1);
-  int NST = 0;
+  std::vector<IntegerVector> aprofile;
+  IntegerVector STwhere(maxST+1, -1); ///< Map from ST to aprofile row number.
   for (int i=0; i < isolate.nrow(); i++) {
-    const int lab = isolate(i,0);
+    const int lab = st[i];
     // have we seen this one before?
     if (STwhere[lab] == -1) {
       // nope - add it
-      for (int j = 0; j < nloc; j++)
-        aprofile[NST][j] = isolate(i, j+1);
-      STwhere[lab] = NST;
-      ++NST;
+      STwhere[lab] = aprofile.size();
+      aprofile.push_back(loci(i, _));
     }
   }
+  int NST = aprofile.size();
   Rcpp::Rcout << "Number of STs is " << NST << " number of humans is " << nhuman << " Number of loci is " << nloc << " Number of groups is " << ng << std::endl;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Create the matrix of human isolates
-  human.resize(nhuman, nloc);
+  human = IntegerMatrix(nhuman, nloc);
   int ih = 0;
-  for (int i=0; i < isolate.nrow(); i++) {
-    if (isolate(i, nloc+1) == 0) {
-      for (int j = 0; j < nloc; j++) {
-        human[ih][j] = isolate(i, j+1);
-      }
-      ++ih;
+  for (int i=0; i < loci.nrow(); i++) {
+    if (source[i] == 0) {
+      human(ih++, _) = loci(i, _);
     }
   }
 
@@ -501,31 +501,26 @@ void Cluster::initialise(const IntegerMatrix &isolate) {
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Count the number of non-human isolates in each group
-  /* Calculate the size and number of unique STs in each group */
-  Matrix<int> niso(NST,ng+1,0);	///< number of each ST in each group, niso[,ng] is number of each ST in all groups
-  size = Vector<int>(ng+1,0);	///< number of STs in each group, size[ng] is number of STs
-  nST = Vector<int>(ng+1,0);	///< number of unique STs in each group, nST[ng] is number of unique STs
+  /* Calculate the number of unique STs in each group */
+  IntegerMatrix niso(NST, ng+1);	///< number of each ST in each group, niso[,ng] is number of each ST in all groups
+  nST = IntegerVector(ng+1);	    ///< number of unique STs in each group, nST[ng] is number of unique STs
   for (int i = 0; i < isolate.nrow(); i++) {
-    const int lab = isolate(i,0);
-    const int gp  = isolate(i,nloc+1)-1;
-    const int wh  = STwhere[lab];
+    const int gp  = source[i] - 1;
+    const int wh  = STwhere[st[i]];
     if (gp >= 0) {
-      if (niso[wh][gp] == 0) ++nST[gp];
-      if (niso[wh][ng] == 0) ++nST[ng];
-      ++niso[wh][gp];
-      ++niso[wh][ng];
-      ++size[gp];
-      ++size[ng];
+      if (niso(wh,gp) == 0) ++nST[gp];
+      if (niso(wh,ng) == 0) ++nST[ng];
+      ++niso(wh,gp);
+      ++niso(wh,ng);
     }
   }
 
   /* Allocate memory for allele counts */
-  acount.resize(ng+1,nloc);	///< counts of alleles in each group at each loci
+  acount.resize(ng+1);	///< counts of alleles in each group at each loci
   for (int i = 0; i < ng+1; i++) {
+    acount[i].resize(nloc);
     for (int j = 0; j < nloc; j++) {
       acount[i][j].resize(maxallele[j]+1);
-      for (int k = 0; k <= maxallele[j]; k++)
-        acount[i][j][k] = 0;
     }
   }
   /* Record the allelic profile for each unique ST in each group */
@@ -533,18 +528,16 @@ void Cluster::initialise(const IntegerMatrix &isolate) {
   FREQ.resize(ng);		///< FREQ[group,unique_st] proportion of unique_st in group
   ABUN.resize(ng);		///< ABUN[group,unique_st] number of unique_st in group
   for (int i = 0; i < ng; i++) {
-    MLST[i].resize(nST[i],nloc);
+    MLST[i] = IntegerMatrix(nST[i],nloc);
     FREQ[i].resize(nST[i]);
     ABUN[i].resize(nST[i]);
   }
-  Vector<int> ix(ng,0);		///< counter for each group - the allelic profile is copied in separately for each group
+  IntegerVector ix(ng,0);		///< counter for each group - the allelic profile is copied in separately for each group
   for (int i = 0; i < NST; i++) { // for each unique ST
     for (int sc = 0; sc < ng; sc++) { // for each group
-      const int ct = niso[i][sc]; // how many of this ST is in this group?
-      if (ct>0) {
-        for (int j = 0; j < nloc; j++) { // copy across the MLST profile
-          MLST[sc][ix[sc]][j] = aprofile[i][j];
-        }
+      const int ct = niso(i, sc); // how many of this ST is in this group?
+      if (ct > 0) {
+        MLST[sc](ix[sc],_) = aprofile[i];
         FREQ[sc][ix[sc]] = (double)ct/(double)size[sc];
         ABUN[sc][ix[sc]] = (double)ct;
         for(int j = 0; j < nloc; j++) { // for each loci
@@ -555,17 +548,6 @@ void Cluster::initialise(const IntegerMatrix &isolate) {
           /* unweighted */ acount[ng][j][allele] += (double)ct/(double)size[ng];
         }
         ++ix[sc];
-      }
-    }
-  }
-
-  nalleles = Matrix<int>(ng+1,nloc,0);	///< number of alleles for each group and each loci. nalleles[ng] is total
-  for (int i = 0; i <= ng; i++) {
-    for (int j = 0; j < nloc; j++) {
-      for (int k = 0; k <= maxallele[j]; k++) {
-        if (acount[i][j][k]>0) {
-          ++nalleles[i][j];
-        }
       }
     }
   }
