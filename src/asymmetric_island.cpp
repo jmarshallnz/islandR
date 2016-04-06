@@ -1,4 +1,4 @@
-#include "cluster.h"
+#include "asymmetric_island.h"
 
 #include <sstream> // for the stream stuff
 #include <iostream>
@@ -7,7 +7,7 @@
 
 using namespace Rcpp;
 
-double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	double loglik = 0.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
@@ -64,7 +64,7 @@ double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 
 	return loglik;
 }
 
-double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
@@ -100,7 +100,7 @@ double Cluster::likHi6(const int id, const int i, const NumericMatrix &A, const 
 	return lik;
 }
 
-void Cluster::precalc() {
+void Island::precalc() {
   // TODO: Much of this can probably be vectorised
 
 	human_unique = LogicalMatrix(human.nrow(), nloc);
@@ -172,7 +172,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin) {
+void Island::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
@@ -390,24 +390,24 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 // helper stuff below here
 
 // Assumes A is correctly sized
-void Cluster::calc_A(NumericMatrix &a, NumericMatrix &A) {
+void Island::calc_A(NumericMatrix &a, NumericMatrix &A) {
   for (int i = 0; i < a.nrow(); i++) {
     A(i,_) = normalise(a(i,_));
   }
 }
 
 // Assumes R is correctly sized
-void Cluster::calc_R(NumericMatrix &r, NumericMatrix &R) {
+void Island::calc_R(NumericMatrix &r, NumericMatrix &R) {
   for (int i = 0; i < r.nrow(); i++) {
     R(i,_) = normalise(r(i,_));
   }
 }
 
-NumericVector Cluster::normalise(const NumericVector &x) {
+NumericVector Island::normalise(const NumericVector &x) {
   return x / sum(x);
 }
 
-Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
+Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {
   NumericArray3 b(ng);
   for(int i = 0; i < ng; i++) {
     b[i].resize(nloc);
@@ -425,12 +425,12 @@ Cluster::NumericArray3 Cluster::calc_b(const NumericMatrix &A) {
   return b;
 }
 
-int Cluster::sample(int n) {
+int Island::sample(int n) {
   double U = R::runif(0, 1);
   return U * n;
 }
 
-int Cluster::multinom(const NumericVector &p) {
+int Island::multinom(const NumericVector &p) {
   double U = R::runif(0, 1);
   for (int i = 0; i < p.size(); i++) {
     if ((U-=p[i]) <= 0.0)
@@ -440,7 +440,7 @@ int Cluster::multinom(const NumericVector &p) {
   return 0;
 }
 
-void Cluster::initialise(IntegerMatrix isolate) {
+void Island::initialise(IntegerMatrix isolate) {
   init = true;
 
   /* Format assumed is ST <genes> SOURCE */
