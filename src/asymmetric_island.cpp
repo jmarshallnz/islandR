@@ -178,28 +178,18 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
   /* Initialize the random number generator */
   RNGScope scope;
 
-	int i,j;
 	/* Initialize the Markov chain */
-	std::vector<double> BETA(ng+1,beta);			///<	Dirichlet hyperparameters of migration matrix (beta==1)
 	NumericMatrix a(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
 	NumericMatrix A(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
-	const bool a_constraint = false;
-	for(i=0;i<ng;i++) {
-		while(true) {
-		  a(i,_) = rgamma(ng+1, beta, 1.0);
-
-			if(!a_constraint) break;
-			double amax = a(i,0);
-			for(j=1;j<ng;j++) if(a(i,j)>amax) amax = a(i,j);
-			if(a(i,i)==amax) break;
-		}
+	for (int i = 0; i < ng; i++) {
+	  a(i,_) = rgamma(ng+1, beta, 1.0);
 	}
 	calc_A(a, A);	///< Does transformation to M
 	NumericArray3 b = calc_b(A);
 
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
-	for(i=0;i<ng;i++) {
+	for (int i = 0; i < ng; i++) {
 		r(i,_) = rgamma(2, gamma_, 1.0);
 	}
 	calc_R(r, R);
@@ -227,11 +217,10 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 	Rcout << "Done 0 of " << niter << " iterations";
 
-	int iter;
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = std::max((int)floor((double)niter/100.),1);
-	for(iter=0;iter<niter+burnin;iter++) {
-		if(iter>=burnin && (iter-burnin)%inc==0) {
+	for (int iter = 0; iter < niter+burnin; iter++) {
+		if (iter>=burnin && (iter-burnin)%inc==0) {
 
 			/* Now dump the likelihoods for this iteration.
 			   Weird that this has nothing to do with the thinning, which applies only
@@ -239,14 +228,12 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 
 			/* Compute likelihood of human isolate from each source */
 		  NumericMatrix phi(human.nrow(), ng);
-		  {
-			  for(int h = 0; h < human.nrow(); h++) {
-          // calculate the likelihood
-          for (int j = 0; j < ng; j++) {
-            phi(h,j) = likHi6(h, j, A, b, R);
-          }
-			  }
-			}
+		  for(int h = 0; h < human.nrow(); h++) {
+        // calculate the likelihood
+        for (int j = 0; j < ng; j++) {
+          phi(h,j) = likHi6(h, j, A, b, R);
+        }
+		  }
 
 		  std::stringstream s; s << iter;
 			human_likelihoods[s.str()] = phi;
@@ -259,7 +246,6 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 					int id1 = sample(ng+1);		// Principal elements of mig matrix to change
 					int id2 = sample(ng);
 					if(id2==id1) id2 = ng;
-					if(a_constraint && (id1==popid || id2==popid)) break;
 					// Need only update one row of a
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
@@ -292,13 +278,7 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
 					ar_prop[id] = R::rlnorm(log(ar[id]), sigma_a);
-					bool reject = false;
-					if(a_constraint) {
-						double ap_primemax = ar_prop[0];
-						for(j=1;j<ng;j++) if(ar_prop[j]>ap_primemax) ap_primemax = ar_prop[j];
-						if(ar_prop[popid]!=ap_primemax) reject = true;
-					}
-					if(reject) break;
+
 					NumericMatrix A_prop(clone(A));
 					A_prop(popid,_) = normalise(ar_prop);
 					// Prior-Hastings ratio
