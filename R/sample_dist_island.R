@@ -3,6 +3,12 @@
 NULL
 
 #' Fit the sampling distribution of genotypes to sources using the assymmetric island model.
+#'
+#' This routine uses the asymmetric island model (See \href{http://dx.doi.org/10.1371/journal.pgen.1000203}{D. Wilson et al 2008}) to estimate the sampling distribution
+#' of genotypes on each source. Once estimated, the sampling distribution may be used with
+#' \code{\link{attribution}} to attribute cases to sources based on genotype data in addition to
+#' other covariates on the cases.
+#'
 #' @export
 #' @param formula A formula of the form Genotype ~ Source
 #' @param sequences A formula of the form ~ASP + GLN + GLT specifying columns for the allelic profile of each type

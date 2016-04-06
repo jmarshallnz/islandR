@@ -3,9 +3,9 @@ Type: Package
 Title: Estimates Source Attribution Probabilities
 Version: 0.1
 Date: 2015-07-02
-Authors@R: person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz",
-    role = c("aut", "cre"))
-Description: Estimates source attribution probabilities based on genotype data.
+Authors@R: c(person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz", role = c("aut", "cre")),
+             person("Daniel", "Wilson", email = "daniel.wilson@ndm.ox.ac.uk", role = "aut"))
+Description: Estimates source attribution probabilities using genotype data in addition to covariate data.
 License: GPL-3
 Depends:
     R(>= 2.10)

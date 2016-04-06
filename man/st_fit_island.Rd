@@ -24,7 +24,10 @@ but P(ST | source) will be computed for these STs in addition to those observed 
 an object of class island which derives from sampling_dist.
 }
 \description{
-Fit the sampling distribution of genotypes to sources using the assymmetric island model.
+This routine uses the asymmetric island model (See \href{http://dx.doi.org/10.1371/journal.pgen.1000203}{D. Wilson et al 2008}) to estimate the sampling distribution
+of genotypes on each source. Once estimated, the sampling distribution may be used with
+\code{\link{attribution}} to attribute cases to sources based on genotype data in addition to
+other covariates on the cases.
 }
 \seealso{
 \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
