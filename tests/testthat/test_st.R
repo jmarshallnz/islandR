@@ -25,3 +25,11 @@ test_that("st_fit summary", {
   expect_equal(nrow(s), length(st$types))
   expect_equal(colnames(s), st$sources)
 })
+
+test_that("st_fit print", {
+  expect_output(print(st), "Sampling distribution of genotypes")
+  expect_output(print(st), paste0("Genotypes:[ ]+", nrow(st$types)))
+  expect_output(print(st), "Model:[ ]+island")
+  expect_output(print(st), "Sources:[ ]+4")
+  expect_output(print(st), "Iterations:[ ]+100")
+})
