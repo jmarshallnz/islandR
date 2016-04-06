@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jmarshallnz/islandR.svg?branch=master)](https://travis-ci.org/jmarshallnz/islandR)
+
 # islandR
 
 The islandR package allows source attribution using the island genomic model (and in the future, other
