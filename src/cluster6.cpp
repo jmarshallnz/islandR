@@ -172,7 +172,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran) {
+void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
@@ -275,7 +275,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
@@ -291,7 +291,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Need only update one row of a
 					NumericMatrix::Row ar = a(popid,_);
 					NumericVector ar_prop = ar;
-					ar_prop[id] = exp(ran.normal(log(ar[id]), sigma_a));
+					ar_prop[id] = R::rlnorm(log(ar[id]), sigma_a);
 					bool reject = false;
 					if(a_constraint) {
 						double ap_primemax = ar_prop[0];
@@ -309,7 +309,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A_prop, b_prop, R);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						ar = ar_prop;
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
@@ -335,7 +335,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						rr = rr_prop;
 						R(popid,_) = R_prop(popid,_);
 						loglikelihood = newloglik;
@@ -350,7 +350,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					// Need only update one row of r
 					NumericMatrix::Row rr = r(popid,_);
 					NumericVector rr_prop = rr;
-					rr_prop[id] = exp(ran.normal(log(rr[id]), sigma_r));
+					rr_prop[id] = R::rlnorm(log(rr[id]), sigma_r);
 					NumericMatrix R_prop = clone(R);
 					R_prop(popid,_) = normalise(rr_prop);
 					// Prior-Hastings ratio
@@ -360,7 +360,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					double newloglik = known_source_loglik(A, b, R_prop);
 
 					logalpha += newloglik - loglikelihood;
-					if (logalpha >= 0.0 || ran.U() < exp(logalpha)) {	// accept
+					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
 						rr = rr_prop;
 						R(popid, _) = R_prop(popid, _);
 						loglikelihood = newloglik;

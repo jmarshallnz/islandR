@@ -2,7 +2,6 @@
 #define _CLUSTER_H_
 
 #include <Rcpp.h>
-#include "random.h"
 
 class Cluster {
   // Not very efficient 2d,3d array class generated from vectors
@@ -41,7 +40,7 @@ public:
   void initialise(Rcpp::IntegerMatrix isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, and runs 100 side-chains to infer F given M and R
-	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin, myutils::Random &ran);
+	void mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin);
 
 	~Cluster() {
 		/* free memory */
