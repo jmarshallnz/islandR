@@ -187,9 +187,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	for(i=0;i<ng;i++) {
 		while(true) {
 		  a(i,_) = rgamma(ng+1, beta, 1.0);
-//			for(j=0;j<ng+1;j++) {
-//				a(i,j) = ran.gamma(1.,BETA[j]);
-//			}
 
 			if(!a_constraint) break;
 			double amax = a(i,0);
@@ -204,10 +201,6 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
 	for(i=0;i<ng;i++) {
 		r(i,_) = rgamma(2, gamma_, 1.0);
-	  //r[i] = ran.beta(gamma_,gamma_);
-//		for(j=0;j<2;j++) {
-//			r(i,j) = rgamma(1.,gamma_);
-//		}
 	}
 	calc_R(r, R);
 
