@@ -5,8 +5,9 @@
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
 #' @param method the method to use to fit the genotype distribution. Only \code{"island"} is supported currently.
 #' @param data optional data frame from which to take variables in \code{formula}.
+#' @param ... further paramters to pass to the method-specific fitting algorithms.
 #' @return an object derived from class sampling_dist.
-#' @seealso \code{\link{st_fit_island}}, \code{\link{sampling_dist.print}}, \code{\link{sampling_dist.plot}}, \code{\link{sampling_dist.summary}}
+#' @seealso \code{\link{st_fit_island}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
 st_fit <- function(formula, non_primary = "Human", method="island", data, ...) {
   type <- match.arg(method)
   switch(type,

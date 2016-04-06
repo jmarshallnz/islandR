@@ -27,6 +27,6 @@ an object of class island which derives from sampling_dist.
 Fit the sampling distribution of genotypes to sources using the assymmetric island model.
 }
 \seealso{
-\code{\link{st_fit}}, \code{\link{sampling_dist.print}}, \code{\link{sampling_dist.plot}}, \code{\link{sampling_dist.summary}}
+\code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
 }
 

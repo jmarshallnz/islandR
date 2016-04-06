@@ -12,7 +12,7 @@ NULL
 #'        100 samples will be taken (or every sample, whichever is smaller).
 #' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class island which derives from sampling_dist.
-#' @seealso \code{\link{st_fit}}, \code{\link{sampling_dist.print}}, \code{\link{sampling_dist.plot}}, \code{\link{sampling_dist.summary}}
+#' @seealso \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
 st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 10000, data) {
   mod.terms = terms(formula, data=data)
   mod.frame = model.frame(formula, data=data)
