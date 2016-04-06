@@ -17,3 +17,4 @@ Imports:
     MASS
 URL: http://github.com/jmarshallnz/islandR
 RoxygenNote: 5.0.1
+Suggests: testthat
