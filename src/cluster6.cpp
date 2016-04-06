@@ -5,13 +5,7 @@
 
 #include <Rcpp.h>
 
-using Rcpp::NumericMatrix;
-using Rcpp::IntegerMatrix;
-using Rcpp::LogicalMatrix;
-using Rcpp::NumericVector;
-using Rcpp::IntegerVector;
-using Rcpp::_;
-using Rcpp::clone;
+using namespace Rcpp;
 
 double Cluster::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	double loglik = 0.0;
@@ -233,7 +227,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 
 	clock_t start = clock(), current;
 	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
-	Rcpp::Rcout << "Done 0 of " << niter << " iterations";
+	Rcout << "Done 0 of " << niter << " iterations";
 
 	int iter;
 	const int burnin = (int)floor((double)niter*.1);
@@ -377,7 +371,7 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 					break;
 				}
 				default: {
-				  Rcpp::stop("Move not recognised");
+				  stop("Move not recognised");
 				}
 			}
 		}
@@ -387,11 +381,11 @@ void Cluster::mcmc6f(const double alpha, const double beta, const double gamma_,
 		  append_traces(iter+1, A, R, loglikelihood, evolution_traces, trace_row++);
 
 		if((current=clock())>next) {
-		  Rcpp::Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
+		  Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
 			next = current + (clock_t)CLOCKS_PER_SEC;
 		}
 	}
-	Rcpp::Rcout << std::endl;
+	Rcout << std::endl;
 }
 
 // helper stuff below here
@@ -438,7 +432,7 @@ int Cluster::multinom(const NumericVector &p, myutils::Random &ran) {
     if ((U-=p[i]) <= 0.0)
       return i;
   }
-  Rcpp::stop("Problem in multinom");
+  stop("Problem in multinom");
   return 0;
 }
 
@@ -448,7 +442,7 @@ void Cluster::initialise(IntegerMatrix isolate) {
   /* Format assumed is ST <genes> SOURCE */
   nloc = isolate.ncol() - 2;
   IntegerMatrix::Column st     = isolate(_, 0);
-  IntegerMatrix loci           = isolate(_, Rcpp::Range(1, nloc));
+  IntegerMatrix loci           = isolate(_, Range(1, nloc));
   IntegerMatrix::Column source = isolate(_, nloc+1);
   ng   = max(source);
 
@@ -466,7 +460,7 @@ void Cluster::initialise(IntegerMatrix isolate) {
   size.push_back(sum(size)); ///< size[ng] is total in source groups
   int nhuman = std::count(source.begin(), source.end(), 0);
 
-  Rcpp::Rcout << "Maximum ST is " << maxST << " total isolates is " << size[ng] << std::endl;
+  Rcout << "Maximum ST is " << maxST << " total isolates is " << size[ng] << std::endl;
 
   // map STs to their numbers
   std::vector<IntegerVector> aprofile;
@@ -481,7 +475,7 @@ void Cluster::initialise(IntegerMatrix isolate) {
     }
   }
   int NST = aprofile.size();
-  Rcpp::Rcout << "Number of STs is " << NST << " number of humans is " << nhuman << " Number of loci is " << nloc << " Number of groups is " << ng << std::endl;
+  Rcout << "Number of STs is " << NST << " number of humans is " << nhuman << " Number of loci is " << nloc << " Number of groups is " << ng << std::endl;
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Create the matrix of human isolates
