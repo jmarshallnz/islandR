@@ -213,9 +213,9 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 	int trace_row = 0;
 	append_traces(0, A, R, loglikelihood, evolution_traces, trace_row++);
 
-	clock_t start = clock(), current;
-	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
-	Rcout << "Done 0 of " << niter << " iterations";
+//	clock_t start = clock(), current;
+//	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
+//	Rcout << "Done 0 of " << niter << " iterations";
 
 	const int burnin = (int)floor((double)niter*.1);
 	const int inc = std::max((int)floor((double)niter/100.),1);
@@ -359,10 +359,10 @@ void Island::mcmc6f(const double alpha, const double beta, const double gamma_, 
 		if(iter >= burnin && (iter+1)%thin==0)
 		  append_traces(iter+1, A, R, loglikelihood, evolution_traces, trace_row++);
 
-		if((current=clock())>next) {
-		  Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
-			next = current + (clock_t)CLOCKS_PER_SEC;
-		}
+//		if((current=clock())>next) {
+//		  Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
+//			next = current + (clock_t)CLOCKS_PER_SEC;
+//		}
 	}
 	Rcout << std::endl;
 }
