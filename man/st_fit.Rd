@@ -7,7 +7,7 @@
 st_fit(formula, non_primary = "Human", method = "island", data, ...)
 }
 \arguments{
-\item{formula}{A formula of the form Genotype ~ Source}
+\item{formula}{A formula of the form Source ~ Genotype}
 
 \item{non_primary}{one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 but P(ST | source) will be computed for these STs in addition to those observed on other sources.}

@@ -1,6 +1,6 @@
 #' Fit the sampling distribution of genotypes to sources using different models.
 #' @export
-#' @param formula A formula of the form Genotype ~ Source
+#' @param formula A formula of the form Source ~ Genotype
 #' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
 #' @param method the method to use to fit the genotype distribution. Only \code{"island"} is supported currently.
