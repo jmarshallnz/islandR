@@ -424,10 +424,7 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   list(post = posterior, ar = c(curr$accept, curr$reject))
 }
 
-mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
-
-  # MCMC parameters
-  thinning   = 100
+mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, thinning = 100) {
 
   # priors
   logit_p_sigma = 1
@@ -438,13 +435,10 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   # posterior
   posterior = list()
 
-  # time column (in case time is important)
-  t = x$Time
-
-  # design matrix
-  if (is.null(x))
-    x = data.frame(dummy=1)
-  X = model.matrix(formula, data=x)
+  # check the size of the time variable
+  if (nrow(X) %% length(t) != 0) {
+    stop("model matrix must have a rows equal to a multiple of the number of times")
+  }
 
   # parameter vector
   n_sources = ncol(phi)
@@ -459,7 +453,6 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   tau     = 1
   rho     = 0
 
-  hierarchical = FALSE
   # initialise p
   p = matrix(0, nrow(X), n_sources-1)
 
@@ -480,16 +473,11 @@ mcmc = function(humans, x, formula, phi, iterations = 10000, burnin = 1000) {
   post_i = 0;
   for (i in seq_len(iterations+burnin)) {
 
-    if (hierarchical) {
-      # update priors
-      curr = update_hyper_theta(curr)
+    # update priors
+    curr = update_hyper_theta(curr)
 
-      # update the p's
-      curr = update_ranef(curr, humans, phi)
-    } else {
-      # update the theta's + p's
-      curr = update_theta(curr, humans, phi)
-    }
+    # update the p's
+    curr = update_ranef(curr, humans, phi)
 
     # sample
     if (i %% 1000 == 0) {

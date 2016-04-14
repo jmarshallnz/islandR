@@ -87,6 +87,116 @@ attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1
   x
 }
 
+#' Attribute cases to sources via MCMC with an AR(1) model on time
+#' @export
+#' @param formula A formula of the form `GenoType ~ Covariates` for cases
+#' @param time The name of the time column
+#' @param sampling_dist A sampling_dist object previously fitted to source genotypes
+#' @param data An optional data frame to take the variables in `formula` from
+#' @param iterations the number of iterations to use in the MCMC
+#' @param burnin the number of iterations to eliminate due to burnin
+#' @param thinning how many iterations to perform before taking a sample
+#' @return an object of type attribution
+#' @seealso print.attribution, summary.attribution, plot.attribution
+attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000, burnin=1000, thinning=100) {
+
+  # check inputs
+  if("sampling_dist" %in% class(sampling_dist)) {
+    stop("sampling_dist must be of class 'sampling_dist'")
+  }
+
+  # pull out the formula terms etc in order to compute the model matrix
+  mod.terms = terms(formula, data=data)
+  mod.frame = model.frame(formula, data=data)
+
+  if (attr(mod.terms, "response") == 0) {
+    stop("formula needs a left hand side")
+  }
+
+  mod.vars = attr(mod.terms, "variables")
+  response = all.vars(mod.terms[[2]]) # response variable
+
+  # pull out the times
+  time_range = range(data[,time])
+  times = 1:time_range[2]
+
+  # hmm, I think we'll need to be lots smarter here, but for now this is a hack
+  # you'd basically run expand.grid for any other covariates here...
+  mod.matrix = matrix(1, nrow=length(times), ncol=1)
+  colnames(mod.matrix) = "(Intercept)"
+
+  # run through the model matrix and find the unique entries
+#   reduced.matrix = list()
+#   reduced.response = list()
+#   for (i in 1:nrow(mod.matrix)) {
+#     # check if this is similar to one of the rows we already have
+#     row = mod.matrix[i,]
+#     found = FALSE
+#     for (j in seq_along(reduced.matrix)) {
+#       if (isTRUE(all.equal(row, reduced.matrix[[j]]))) {
+#         # yes! Accumulate up the response
+#         reduced.response[[j]] = c(reduced.response[[j]], mod.frame[i,response])
+#         found = TRUE;
+#         break;
+#       }
+#     }
+#     if (!found) {
+#       # add to the end
+#       reduced.matrix[[length(reduced.matrix)+1]] = row
+#       reduced.response[[length(reduced.response)+1]] = mod.frame[i,response]
+#     }
+#   }
+  reduced.matrix = list()
+  reduced.response = list()
+  for (i in 1:nrow(mod.matrix)) {
+    row = mod.matrix[i,]
+    # find all rows in the data that match this time
+    wch = data[,time] == times[i] # fuck this is bad...
+    reduced.matrix[[length(reduced.matrix)+1]] = row
+    reduced.response[[length(reduced.response)+1]] = data[wch,response]
+  }
+  # now accumulate up the response variable and matrix
+  # TODO: this seems to screw up if we don't actually have a matrix??
+  reduced.matrix = as.matrix(simplify2array(reduced.matrix))
+  colnames(reduced.matrix) = colnames(mod.matrix)
+  y = lapply(reduced.response, function(x) { as.data.frame(table(Type=x), responseName = "Number") })
+
+  # now map types in y to types from our sampling distribution on the sources
+  y = lapply(y, function(x, map) { x$Type = match(x$Type, map); x }, sampling_dist$types)
+  # check that there are no mismatches
+  if (any(lapply(y, function(x) { sum(is.na(x$Type)) })>0)) {
+    stop("Have types that aren't found in the sampling distribution of the sources")
+  }
+  # convert y to a matrix so it's happy in c++-land
+  y = lapply(y, as.matrix)
+
+  # now fit our MCMC
+  post = NULL
+  ar = c(0,0)
+  for (i in seq_len(iterations(sampling_dist))) {
+    cat("Performing iteration", i, "of", iterations(sampling_dist), "\n")
+    iter = mcmc(y,
+                t=times,
+                X=reduced.matrix,
+                phi=sampling_dist$sampling_distribution[,,i],
+                iterations=iterations,
+                burnin=burnin,
+                thinning=thinning)
+    post = c(post, iter$post)
+    ar = ar + iter$ar
+  }
+  # now assemble the final object
+  x = list(posterior = post,
+           acceptance_rate = ar[1] / sum(ar),
+           formula = formula,
+           data = data,
+           cases = y,
+           model_matrix = reduced.matrix,
+           genotype_data = sampling_dist)
+  class(x) = "attribution"
+  x
+}
+
 #' Print an overview of an attribution object
 #' @export
 #' @param x an object of class `attribution`
