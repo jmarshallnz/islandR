@@ -435,8 +435,12 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
   # posterior
   posterior = list()
 
-  # check the size of the time variable
-  if (nrow(X) %% length(t) != 0) {
+  # check the size of the time variable.
+  # we assume that we duplicate time for each observation (i.e. we assume
+  # X has been setup in this fashion)
+  dupe_times = nrow(X) %/% length(t)
+  times = rep(t, dupe_times)
+  if (nrow(X) != length(times)) {
     stop("model matrix must have a rows equal to a multiple of the number of times")
   }
 
@@ -467,7 +471,7 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
   }
 
   # storage for the current iteration
-  curr = list(p = p, X = X, t = t, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
+  curr = list(p = p, X = X, t = times, theta = theta, tau = tau, rho = rho, log_likelihood = log_likelihood, accept=0, reject=0)
 
   # main MCMC loop
   post_i = 0;
