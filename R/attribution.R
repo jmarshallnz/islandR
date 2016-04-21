@@ -125,9 +125,9 @@ attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000
   # we kind of need times expanded (so no missing ones). Perhaps that can be a requirement?
   # and then need to reduce things in the usual fashion, then sort by time and then
   # remove time from the matrix.
-  x0 = expand.grid(Times=times)
+  x0 = expand.grid(Times=times, UR_bool=factor(c("Rural", "Urban")))
   x0$Intervention=factor(ifelse(x0$Times <= 36, "Before", "After"))
-  mod.matrix = model.matrix(~Intervention, data=x0)
+  mod.matrix = model.matrix(~Intervention*UR_bool, data=x0)
 #  mod.matrix = matrix(1, nrow=length(times), ncol=1)
 #  colnames(mod.matrix) = "(Intercept)"
 
@@ -157,7 +157,7 @@ attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000
   for (i in 1:nrow(mod.matrix)) {
     row = mod.matrix[i,]
     # find all rows in the data that match this time
-    wch = data[,time] == times[i] # fuck this is bad...
+    wch = data[,time] == x0$Times[i] & data$UR_bool == x0$UR_bool[i] # fuck this is bad...
     reduced.matrix[[length(reduced.matrix)+1]] = row
     reduced.response[[length(reduced.response)+1]] = data[wch,response]
   }
