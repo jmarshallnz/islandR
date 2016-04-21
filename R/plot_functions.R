@@ -8,6 +8,15 @@ get_var = function(post, variable) {
   }
 }
 
+#' Extract a variable from the posterior of an attribution fit
+#' @export
+#' @param x an attribution object, fit using attribution.
+#' @param variable a character string specifying the variable to extract.
+#' @return a list of posterior values for the given variable
+get_variable = function(x, variable) {
+  get_var(x$posterior, variable)
+}
+
 # traces...
 plot_traces = function(post, variable) {
   post_list = get_var(post, variable)
