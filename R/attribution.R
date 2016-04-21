@@ -122,8 +122,14 @@ attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000
 
   # hmm, I think we'll need to be lots smarter here, but for now this is a hack
   # you'd basically run expand.grid for any other covariates here...
-  mod.matrix = matrix(1, nrow=length(times), ncol=1)
-  colnames(mod.matrix) = "(Intercept)"
+  # we kind of need times expanded (so no missing ones). Perhaps that can be a requirement?
+  # and then need to reduce things in the usual fashion, then sort by time and then
+  # remove time from the matrix.
+  x0 = expand.grid(Times=times)
+  x0$Intervention=factor(ifelse(x0$Times <= 36, "Before", "After"))
+  mod.matrix = model.matrix(~Intervention, data=x0)
+#  mod.matrix = matrix(1, nrow=length(times), ncol=1)
+#  colnames(mod.matrix) = "(Intercept)"
 
   # run through the model matrix and find the unique entries
 #   reduced.matrix = list()
@@ -157,7 +163,7 @@ attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000
   }
   # now accumulate up the response variable and matrix
   # TODO: this seems to screw up if we don't actually have a matrix??
-  reduced.matrix = as.matrix(simplify2array(reduced.matrix))
+  reduced.matrix = t(as.matrix(simplify2array(reduced.matrix)))
   colnames(reduced.matrix) = colnames(mod.matrix)
   y = lapply(reduced.response, function(x) { as.data.frame(table(Type=x), responseName = "Number") })
 
