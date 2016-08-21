@@ -6,7 +6,7 @@ library(pubmlst)
 library(tidyr)
 
 # read in data
-manawatu_sources <- read.csv("~/extract_attribution.csv")
+manawatu_sources <- read.csv("extract_for_attribution.csv")
 
 # remap the sources
 manawatu_sources <- manawatu_sources %>%
@@ -20,7 +20,7 @@ manawatu_sources <- manawatu_sources %>%
                                Wild_bird = c("Water_bird_wild", "Wild_bird_other"))))
 
 # read in human data
-havelock <- read_excel("~/Downloads/For Massey 21 Aug2016a.xlsx",sheet=2)
+havelock <- read_excel("For Massey 21 Aug2016a.xlsx",sheet=2)
 cases <- havelock %>%
   select(Source=Group, ASP=aspA, GLN=glnA, GLT=gltA, GLY=glyA, TKT=tkt, UNC=uncA, PGM=pgm) %>%
   filter(Source == 'Clinical') %>%
