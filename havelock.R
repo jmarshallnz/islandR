@@ -11,6 +11,9 @@ manawatu_sources <- read.csv("extract_for_attribution.csv")
 # remap the sources
 manawatu_sources <- manawatu_sources %>%
   filter(Source != "Human") %>%
+#  filter(Source != "Environmental water", Source != "Wild_bird") %>%
+#  mutate(SampledDate = as.Date(as.character(SampledDate))) %>%
+#  filter(SampledDate >= "2014-01-01") %>%
   mutate(Source = as.character(fct_collapse(Source,
                                Poultry=c("Supplier A", "Supplier B",
                                          "Supplier Other", "Spent_hen",
