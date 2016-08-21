@@ -3,6 +3,7 @@ library(dplyr)
 library(readxl)
 library(forcats)
 library(pubmlst)
+library(tidyr)
 
 # read in data
 manawatu_sources <- read.csv("~/extract_attribution.csv")
@@ -55,7 +56,6 @@ st = st_fit(formula = Source ~ ST,
 mod = attribution(ST ~ 1, st, data=subset(dat, Source == "Human"))
 
 summary(mod)
-library(tidyr)
 quantiles <- predict(mod, newdata=NULL, FUN=quantile, c(0.025, 0.5, 0.975))
 attribution <- quantiles %>%
   select(-X) %>% mutate(p = round(p*100, 1)) %>%
