@@ -72,9 +72,9 @@ filtered <- posterior %>%
   left_join(restrict) %>%
   filter(p > lc & p < uc)
 
-pdf("havelock_attribution.pdf", width=8, height=5)
-par(mar=c(4,6,4,2))
-boxplot(p*100 ~ Source, data=filtered, main="Attribution of human cases", horizontal=TRUE, las=1, xlab="P(source) (%)", pch='.')
+png("havelock_attribution_box.png", width=800, height=400)
+par(mar=c(4,10,4,2))
+boxplot(p*100 ~ Source, data=filtered, main="Attribution of human cases", horizontal=TRUE, las=1, xlab="Probability case types originate from source (%)", pch='.')
 dev.off()
 
 # experiment with ggplot2
