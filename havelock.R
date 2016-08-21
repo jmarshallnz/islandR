@@ -78,8 +78,14 @@ boxplot(p*100 ~ Source, data=filtered, main="Attribution of human cases", horizo
 dev.off()
 
 # experiment with ggplot2
+png("havelock_attribution.png", width=800, height=400)
 ggplot(filtered) +
-  geom_violin(aes(Source, p), fill="slate grey") + coord_flip()
+  geom_violin(aes(Source, p*100), scale='width', fill='lightgrey') +
+  theme_bw(base_size=15) +
+  ylab("Percentage attribted to source") +
+  xlab("") +
+  coord_flip()
+dev.off()
 
 st42 = t(st$sampling_dist[st$types == 42,,])
 st1517 = t(st$sampling_dist[st$types == 1517,,])
