@@ -1,4 +1,5 @@
 #' @importFrom reshape2 melt
+#' @importFrom stats terms model.frame model.matrix median delete.response quantile setNames
 NULL
 
 #' Attribute cases to sources via MCMC

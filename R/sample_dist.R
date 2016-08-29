@@ -1,3 +1,6 @@
+#' @importFrom graphics barplot
+NULL
+
 #' Fit the sampling distribution of genotypes to sources using different models.
 #' @export
 #' @param formula A formula of the form Source ~ Genotype

@@ -1,4 +1,5 @@
 #' @importFrom MASS mvrnorm
+#' @importFrom stats rnorm rgamma runif
 NULL
 
 # Log-likelihood function
