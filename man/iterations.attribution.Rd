@@ -15,4 +15,3 @@ The number of iterations (integer)
 \description{
 Retrieve the number of MCMC samples from an attribution object
 }
-

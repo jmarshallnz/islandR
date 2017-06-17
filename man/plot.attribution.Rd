@@ -14,4 +14,3 @@
 \description{
 Plot an attribution object
 }
-

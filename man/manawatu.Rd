@@ -27,4 +27,3 @@ A dataset containing MLST isolates from human and animal sources from the Manawa
 New Zealand.
 }
 \keyword{datasets}
-

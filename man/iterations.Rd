@@ -15,4 +15,3 @@ the number of iterations
 \description{
 Generic for retrieving the number of iterations from an object
 }
-

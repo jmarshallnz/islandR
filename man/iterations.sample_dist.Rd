@@ -15,4 +15,3 @@ the number of iterations
 \description{
 Retrieve the number of iterations from a sample_dist object
 }
-

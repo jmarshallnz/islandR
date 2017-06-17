@@ -27,4 +27,3 @@ Fit the sampling distribution of genotypes to sources using different models.
 \seealso{
 \code{\link{st_fit_island}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
 }
-

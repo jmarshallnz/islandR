@@ -29,4 +29,3 @@ Attribute cases to sources via MCMC
 \seealso{
 print.attribution, summary.attribution, plot.attribution
 }
-

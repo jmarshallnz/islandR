@@ -14,4 +14,3 @@
 \description{
 Retrieve a summary of an attribution object
 }
-

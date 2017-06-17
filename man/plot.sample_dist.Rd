@@ -14,4 +14,3 @@
 \description{
 Produce a summary plot (stacked barplot) of posterior means
 }
-

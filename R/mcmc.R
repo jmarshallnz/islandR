@@ -26,14 +26,15 @@ inverse_logit = function(logit_p) {
   pn / sum(pn)
 }
 
-update_hyper_theta = function(curr) {
+update_hyper_theta = function(curr, priors) {
+
   # hyper-priors
-  theta_0    = matrix(0, nrow(curr$theta), ncol(curr$theta))
-  theta_prec = diag(0.1, nrow(curr$theta)) # same prior across all sources
-  tau_shape  = 1 #0.1
-  tau_rate   = 10 #0.1
-  rho_0      = 0
-  rho_prec   = 4
+  theta_0    = matrix(priors$theta$mean, nrow(curr$theta), ncol(curr$theta))
+  theta_prec = diag(priors$theta$prec, nrow(curr$theta)) # same prior across all sources
+  tau_shape  = priors$tau$shape
+  tau_rate   = priors$tau$rate
+  rho_0      = priors$rho$mean
+  rho_prec   = priors$rho$prec
 
   ntimes     = max(curr$t, 1)
 
@@ -425,7 +426,14 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   list(post = posterior, ar = c(curr$accept, curr$reject))
 }
 
-mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, thinning = 100) {
+mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
+
+  if (is.null(priors)) {
+    priors <- list()
+    priors$tau <- list(shape = 1, rate = 10)
+    priors$rho <- list(mean = 0, prec = 4)
+    priors$theta <- list(mean = 0, prec = 0.1)
+  }
 
   # priors
   logit_p_sigma = 1
@@ -479,7 +487,7 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
   for (i in seq_len(iterations+burnin)) {
 
     # update priors
-    curr = update_hyper_theta(curr)
+    curr = update_hyper_theta(curr, priors)
 
     # update the p's
     curr = update_ranef(curr, humans, phi)

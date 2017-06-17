@@ -14,4 +14,3 @@
 \description{
 Print a summary of an attribution object
 }
-

@@ -5,7 +5,7 @@
 \title{Attribute cases to sources via MCMC with an AR(1) model on time}
 \usage{
 attribution_ar1(formula, time, sampling_dist, data, iterations = 10000,
-  burnin = 1000, thinning = 100)
+  burnin = 1000, thinning = 100, priors = NULL)
 }
 \arguments{
 \item{formula}{A formula of the form `GenoType ~ Covariates` for cases}
@@ -21,6 +21,8 @@ attribution_ar1(formula, time, sampling_dist, data, iterations = 10000,
 \item{burnin}{the number of iterations to eliminate due to burnin}
 
 \item{thinning}{how many iterations to perform before taking a sample}
+
+\item{priors}{A list specifying the priors to use.}
 }
 \value{
 an object of type attribution
@@ -31,4 +33,3 @@ Attribute cases to sources via MCMC with an AR(1) model on time
 \seealso{
 print.attribution, summary.attribution, plot.attribution
 }
-

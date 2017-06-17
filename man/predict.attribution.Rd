@@ -23,4 +23,3 @@ a data frame containing the posterior attribution (p), the source (Source), the 
 \description{
 Predict attribution on a new data set
 }
-

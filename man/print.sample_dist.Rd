@@ -14,4 +14,3 @@
 \description{
 Print a sample_dist object
 }
-

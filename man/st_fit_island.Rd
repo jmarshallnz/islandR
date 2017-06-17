@@ -32,4 +32,3 @@ other covariates on the cases.
 \seealso{
 \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
 }
-

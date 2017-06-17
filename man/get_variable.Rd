@@ -17,4 +17,3 @@ a list of posterior values for the given variable
 \description{
 Extract a variable from the posterior of an attribution fit
 }
-

@@ -17,4 +17,3 @@ posterior means of the ST distribution on each source
 \description{
 Print a summary for a sample_dist object
 }
-
