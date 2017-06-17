@@ -378,9 +378,6 @@ update_ranef = function(curr, humans, phi) {
 
 mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinning = 100) {
 
-  # priors
-  logit_p_sigma = 1
-
   # accept/reject
   accept_reject = numeric(2)
 
@@ -434,9 +431,6 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
     priors$rho <- list(mean = 0, prec = 4)
     priors$theta <- list(mean = 0, prec = 0.1)
   }
-
-  # priors
-  logit_p_sigma = 1
 
   # accept/reject
   accept_reject = numeric(2)
