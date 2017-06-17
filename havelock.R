@@ -31,6 +31,11 @@ cases <- havelock %>%
   filter(!is.na(ST)) %>% select(-CC, -Coli)
 cases$Source = "Human"
 
+pahiatua <- data.frame(ST=c(61,190,190,190,3793,50,190,50,61))
+cases <- pahiatua %>% left_join(pubmlst) %>%
+  select(-CC, -Coli)
+cases$Source = "Human"
+
 #havelock <- read_excel("~/Downloads/For Massey 21 Aug2016a.xlsx")[6:8]
 #cases <- havelock %>%
 #  rename(Cases = `Clinical Cases`, ST=`WGS-MLST`, Water=`Water supply`) %>%
@@ -79,10 +84,11 @@ dev.off()
 
 # experiment with ggplot2
 png("havelock_attribution.png", width=800, height=400)
+png("pahiatua_attribution_cow_sheep.png", width=800, height=400)
 ggplot(filtered) +
   geom_violin(aes(Source, p*100), scale='width', fill='lightgrey') +
   theme_bw(base_size=15) +
-  ylab("Percentage attribted to source") +
+  ylab("Percentage attributed to source") +
   xlab("") +
   coord_flip()
 dev.off()
