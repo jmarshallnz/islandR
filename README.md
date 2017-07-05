@@ -24,6 +24,8 @@ devtools::install_github("jmarshallnz/islandR")
 
 ## Usage
 
+An example to fit the model and provide attribution probabilities using the included example dataset is below.
+
 ```R
 library(islandR)
 
@@ -39,7 +41,6 @@ st = st_fit(formula = Source ~ ST,
 
 # see some summaries of these
 summary(st)
-plot(st)
 
 # Fit the attribution model for human cases, estimating separately by location
 mod = attribution(ST ~ Location, st, data=subset(manawatu, Source == "Human"))
@@ -47,9 +48,31 @@ mod = attribution(ST ~ Location, st, data=subset(manawatu, Source == "Human"))
 # Various model summaries
 summary(mod)
 predict(mod, FUN=mean)
-
-# Posterior predictions including uncertainty
-posterior = predict(mod, FUN=identity)
-boxplot(p ~ interaction(X, Source), data=posterior, "Posterior attribution")
 ```
 
+The package is designed to make use of the [tidyverse](http://tidyverse.org) for further processing of output. The `predict` function returns a `data.frame` for this purpose.
+
+```
+# Use ggplot2 for prettier plots. The predict() function returns a data.frame
+# ready for the tidyverse, but it's useful to first tidy up the X variable (model
+# frame for attribution) as needed.
+
+library(dplyr)
+library(forcats)
+library(ggplot2)
+
+df <- posterior %>% mutate(Location = fct_recode(X,
+                                        Urban = '(Intercept):LocationUrban',
+                                        Rural = '(Intercept)'))
+
+ggplot(df) +
+  geom_violin(aes(x=Source, y=p, fill=Source), scale="width") +
+  coord_flip() +
+  scale_y_continuous("Attributed human cases", labels=scales::percent) +
+  xlab("") +
+  facet_grid(. ~ Location) +
+  guides(fill=FALSE) +
+  ggtitle("Cases of campylobacteriosis in the Manawatu region of New Zealand")
+```
+
+![Attribution of Campylobacter](example_ggplot2.png)
