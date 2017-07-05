@@ -61,6 +61,9 @@ library(dplyr)
 library(forcats)
 library(ggplot2)
 
+# grab the full posterior (all samples)
+posterior <- predict(mod, FUN=identity)
+
 df <- posterior %>% mutate(Location = fct_recode(X,
                                         Urban = '(Intercept):LocationUrban',
                                         Rural = '(Intercept)'))
