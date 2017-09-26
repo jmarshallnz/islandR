@@ -1,0 +1,290 @@
+\documentclass[times, doublespace]{WileyNJD-v2}%For paper submission
+%\documentclass[times]{simauth}
+% Packages
+%\usepackage{fcyheader}
+\usepackage{mdframed}
+%\usepackage{subcaption}
+\usepackage{subfig}
+\usepackage{url}
+\usepackage{color}
+
+%\usepackage[T1]{fontenc}
+%\usepackage{times}
+%\usepackage{bm}
+%\usepackage{mathtime}
+
+% Customised Commands
+%\newtheorem{theorem}{Theorem}[section]
+%\newtheorem{corollary}{Corollary}[theorem]
+%\newtheorem{lemma}[theorem]{Lemma}
+%\newenvironment{proof}[1][Proof]{\begin{trivlist}
+%\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+%\newcommand{\qed}{\nobreak \ifvmode \relax \else
+%      \ifdim\lastskip<1.5em \hskip-\lastskip
+%      \hskip1.5em plus0em minus0.5em \fi \nobreak
+%      \vrule height0.75em width0.5em depth0.25em\fi}
+
+% Bibliographystyle
+\bibliographystyle{wileyj}
+
+%\title{Statistical models for the source attribution of zoonotic diseases: A study of campylobacteriosis} 
+
+\begin{document}
+%\runninghead{Statistical models for the source attribution of zoonotic diseases}
+%\author{Sih-Jing Liao\affil{a},
+%Jonathan Marshall\affil{a}\corrauth\ \footnotemark[2], Martin L. Hazelton\affil{a} and Nigel P. French\affil{b}}
+%\address{\affilnum{a} Institute of Fundamental Sciences-Statistics, Massey University, Palmerston North, New Zealand\\
+%\affilnum{b} mEpiLab, Hopkirk Research Institute, Massey University, Palmerston North, New Zealand}
+%\corraddr{Jonathan Marshall, Institute of Fundamental Sciences-Statistics, Massey University, Private Bag 11222, Palmerston North, New Zealand\\ \footnotemark[2] E-mail: J.C.marshall@massey.ac.nz}
+
+\begin{abstract}
+
+Preventing and controlling zoonoses with a public health policy depends on the knowledge scientists have about the transmitted pathogens. Modeling jointly the epidemiological data and genetic information on the cases provides a methodology for tracing back the source of infection. The genetic information on cases may be modelled at a variety of levels, as can the epidemiological data. In this paper, the attribution probability for human cases of campylobacteriosis for each source, conditional on the effect of the rurality of each case, is estimated utilising a model that incorporates genetic processes alongside a newly developed genetic-free model. We show that the inference from each model is comparable, and that the effect of rurality may be modelled linearly, with increasing rurality leading to increasing likelihood of ruminant-sourced campylobacteriosis.
+  
+\end{abstract}
+%\keywords{source attribution; \textit{Campylobacter}; multinomial model; Dirichlet prior; HPD interval; DIC}
+
+%\maketitle
+
+\section{Introduction}
+Modeling for disease surveillance data to explore patterns of infectious diseases has had a long history in public health. Infectious diseases can cause high economic and medical costs due to morbidity and mortality. In recent decades, the annual number of global deaths caused by infections has leveled off at approximate 15 million and may remain at this level for the next three decades \cite{DyeC, WHOM}. In order for such an enormous health burden to be reduced, preventing and controlling infectious diseases becomes extraordinarily important, which depends on how much we know about the course of disease transmission. Therefore, quantifying the dynamics of infection is the key to help us better understand zoonoses, which also provides valuable information to professionals who are making decisions on public health policy for disease control. 
+
+Over the last few decades there have been many models developed for the analysis of zoonotic diseases. Epidemiological models make use of proportions of cases and geographic data to capture the main characteristics of the spread system. For example, the Susceptible-Infectious-Recovered model \cite{Kerm} classifies populations into a susceptible, infective and recovered status enabling an estimation of the number of individuals who are likely to be infected. Also, models with a combination of spatial and temporal data enable the prediction of the time frame and areas a disease or an outbreak is likely to occur \cite{HeldL, Hoehl, Simo}. However, a framework of a zoonotic transmission passed from animals to humans can have a complexity that involves various exposures contaminated via different pathways. For instance, infected wild birds may contaminate environmental water and cause the spread to water users, either humans or non-humans \cite{Wagen}. This implies that tracing back the source of infection is crucial in enriching the resolution of the network, thereby increasing the ability to implement risk management and intervention \cite{Wilso, Morel}. In terms of statistical analysis, it also means that modeling for zoonoses requires an advanced approach with the focus changed from epidemiology to a combination of epidemiology, evolutionary genetics and biology \cite{Muell}. Hence, some source attribution models have been proposed to estimate the number of cases attributable to different sources by utilizing the epidemiological information and the association with genotypes found in humans and sources \cite{vanP, Hald, MullA}. 
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{crrrrrrr}
+      \toprule
+      ST & \textit{asp} & \textit{gln} & \textit{glt} & \textit{gly} & \textit{pgm}& \textit{tkt}& \textit{unc}\\ \midrule
+      45  & 4 & 7 & 10 & 4 & 1 & 7 & 1\\
+      474 & 2 & 4 & 1 & 2 & 2 & 1 & 5 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \caption{The allelic profile of genotypes ST-45 and ST-474 is composed of seven allele numbers at each of the seven loci.}
+  \label{tab0}
+\end{table}
+
+The genetic information used in the integrated models is typically the genotypes that capture the dynamic changes on DNA sequences occurring in the transmitted pathogens \cite{Cotta}. In order to incorporate the genetic information in the epidemiological data, some molecular tools may need to be deployed in the analysis. For example, a multilocus sequence typing (MLST) \cite{Dingl, Coll} is developed and used particularly to identify the species of the pathogen \textit{Campylobacter}, which causes campylobacteriosis, a worldwide gastrointestinal disease in humans. This method uses the location of genes (called loci) and the variants of genes (called alleles, caused by mutation and recombination) observed from fragmented DNA sequences typed from isolates, which are subjects taken from groups of bacterial colonies produced by a small piece of sample in culture plates. In the process of type identification, MLST determines seven specific housekeeping genes (or loci), representing the main functions of the whole genome sequence, to characterize the species of \textit{Campylobacter} \cite{Urwin}. These housekeeping genes are \textit{asp}A (aspartase A), \textit{gln}A (glutamine synthetase), \textit{glt}A (citrate synthase), \textit{gly}A (serine hydroxymethyltransferase), \textit{pgm} (phosphoglucomutase), \textit{tkt} (transketolase), and \textit{unc}A (ATP synthase $\alpha$ subunit). Once the seven loci are targeted on sequences, MLST produces an allelic profile consisting of seven positive integers addressing the unique genetic sequence at the respective locus, and it also assigns a unique positive integer as a sequence type (ST) to the associated profile for designation. An illustrative example of a part of MLST data is presented in Table~(\ref{tab0}). It shows that the genotypes ST-45 and ST-474 have different allelic combinations across the seven loci. The different allelic profiles enable comparison of gene similarities or dissimilarities so that an association between sources and infected cases can be made.
+
+The epidemiological and molecular-based models provide greater insight into source attribution. It improves knowledge about infection attributed to sources from the time scale and the location point of view if spatial-temporal covariates are considered in the model. However, few authors in the literature put an emphasis on validations to these integrated models, in which the genetic effects are difficult to assess analytically due to increased model complexity. We are therefore motivated to develop a simpler model so that we can evaluate the integrated source attribution model and examine its rationality for depicting the actual attribution. 
+
+In this paper we develop statistical models for the source attribution, and use a case study of human campylobacteriosis conducted in New Zealand \cite{Marsh} as a demonstration. Human campylobacteriosis is caused by \textit{Campylobacter}, of which \textit{C. jejuni} and \textit{C. coli} are the dominant species associated with 80\% and approximately 15\% of illnesses, respectively \cite{Guert}. The common symptoms of infection are diarrhea, abdominal pain and fever. However, a severe complication named Guillain Barre syndrome might be developed, which is a life-threatening disease that weakens the nervous system and leads to paralysis in limbs and respiration \cite{Hanha}. The pathogen can be spread between animals, or from animals and wild birds to humans. The transmission route can be via drinking contaminated water, eating undercooked animal food products, or handling animal food products that are already contaminated by faeces. In the study, the applied model \cite{Wilso} particularly considers genetic evolution in the pathogen that gives an estimation of the proportion of cases that are more likely to get infected from sources when some genotypes are observed from infected individuals. To uncover the genetic effects contributed behind the model, a simple model is particularly developed to simulate comparative information as the integrated model provides. Based on the information produced by the two models we estimate and compare the attribution probability for each source by fitting a general model, from which more covariates can be incorporated, to explore the variation of the attribution probability from a fresh perspective. Last, we apply the approach to the case study to explore the differences in source attribution between the integrated model and the simple model in relation to the geographical areas where the human cases resided.
+
+
+\section{Models for source attribution with/without information of evolutionary change}
+\subsection{Notation and assumptions}
+The ultimate goal of the model development is to estimate the source attribution probability, which can quantify the attribution to each source with probability given a genotype is identified in an individual. The main idea behind the establishment has two parts: the sampling distribution of genotypes associated with sources, and the proportion of human cases for each source. Specifying first the sampling distribution of genotypes found on sources is fundamental for the purpose of not only exploring how it affects the source attribution probability, but also investigating the difference in attribution effect made between the model with genetic information and the model without it. 
+
+Suppose we have isolates collected from human and non-human cases, of which $H$ isolates belong to humans, and the remaining $N$ isolates are categorized in $J$ groups as the major sources attributed to the infection. Let $I$ genotypes be the total number of unique STs detected from all isolates, and denote $n_j$ as the marginal frequency of STs found in source $j$, where $\sum_j^J n_j = N$. Typically, the number of detected STs $I$ is smaller than the sample size of isolates because some isolates may have the same genetic information.
+
+The likelihood of observing a human case h can be found via the law of total probability, which is expressed as,
+
+\begin{align}
+  L\Big(\text{source }j; \text{ST} \Big)=\prod_{h=1}^{H}\sum_{j=1}^{J} p\Big(\text{ST}i(h) \vert \text{source } j\Big) p\Big(\text{source }j\Big),
+  \label{Olikh}
+\end{align}
+
+where $p(\text{ST }i(h)\vert \text{source }j)$ is the estimated sampling distribution of genotypes for the h$^{th}$ case, $p(\text{source }j)$ is the attribution probability that a random human case is infected from source $j$. The likelihood over all human cases is multiplying each individual likelihood, which sums up the probability of detecting a genotype from the h$^{th}$ case over sources with the associated attribution probability. It is then used in the Metropolis-Hastings algorithm with a priori knowledge of $p(\text{source }j)$ to simulate samples of attribution probability. We can compare the attribution results produced from the integrated and the genetic-free models to explore the genetic efforts the integrated model contributes.
+
+The model with genetic information used in this paper is the integrated model \cite{Wilso} adopted in the source attribution study for human campylobacteriosis \cite{Marsh}. The model has two components: an epidemiological model and an evolutionary model. The epidemiological component is a multinomial-based model capturing the number of genotypes typed from human and non-human isolates. Meanwhile, the evolutionary component estimates the rates of mutation and recombination occurring within sources, and also the migration rate at which the pathogen moves between sources by associating each source with an island. The joint model therefore makes use of the two estimates to find out how likely it is the observed genotypes detected from individuals can be attributed to sources. For simplicity, we will refer to the joint model as ``the island model'' and denote $p(\text{ST }i\vert \text{source }j, \boldsymbol{X}, \boldsymbol{G})$ as the probability the model estimates, where $\boldsymbol{X}$ represents the frequency information provided from the multinomial model and $\boldsymbol{G}$ is the parameter set of evolutionary rates evaluated in the genetic part.
+
+To discover the genetic efforts behind the island model, a simple model is developed to produce similar inforamtion to what the island model provides. With an assumption that the sampling distribution of genotypes on each source is similar to the distribution of observed genotypes, the model is also on a multinomial basis. Let $x_{ij}$ denote the count of ST-$i$ found in source $j$ with the probability $\pi_{ij}$, where $i=1, \ldots, I$ and $j=1, \ldots, J$. To make an inference about $\pi_{ij}$, the likelihood is of a multinomial form,
+
+\begin{align}
+        L(\boldsymbol{\pi}_{j} ; \boldsymbol{x}_{j}) & = \frac{n_j!}{\prod_{i=1}^{I} x_{ij}!} \prod_{i=1}^I \pi_{ij}^{x_{ij}}, \notag
+\end{align}
+
+where $x_{ij}$ can be $0$, indicating STs are yet observed on the sources; $n_j=\sum_{i=1}^I x_{ij}$ is the total count of ST found on source $j$ and $\pi_{ij}$ is subject to $\sum_{i=1}^I \pi_{ij} =1$, and $0 \leq \pi_{ij} \leq 1$. As the family of Dirichlet distribution is a conjugate pair for the multinomial distribution, assume the prior of $\boldsymbol{\pi}_{j}$ follows a Dirichlet density with parameters $\boldsymbol{\alpha}_{j}$, 
+
+\begin{align}
+  p(\boldsymbol{\pi}_{j}) & \propto \prod_{i=1}^{I}\pi_{ij}^{\alpha_{ij}-1}. \notag
+\end{align}
+
+Then, the posterior of $\boldsymbol{\pi}_{j}$ takes the form of a Dirichlet probability function with parameters $(\boldsymbol{\alpha}_{j}+\boldsymbol{x}_{j}-\boldsymbol{1})$,
+
+\begin{align}
+        p(\boldsymbol{\pi}_{j} \vert \boldsymbol{x}_{j} ) & \propto L(\boldsymbol{\pi}_{j} ; \boldsymbol{x}_{j}) p(\boldsymbol{\pi}_{j}) \notag \\ 
+       & \propto \prod_{i=1}^{I}\pi_{ij}^{\alpha_{ij} + x_{ij}-1}, \quad \alpha_{ij} >0. \notag
+ \end{align}
+
+To express the belief that every human case has the same chance of getting infected from each of $J$ sources, the parameter of the Dirichlet prior is assumed as $\boldsymbol{\alpha}_{j}=\boldsymbol{1}$ in the application. Therefore, p(ST $i\vert$source $j$, $\boldsymbol{X}$) can be obtained by simulating pseudo counts for each genotype with the posterior probability $\boldsymbol{\pi}_{j}$.
+
+Last, the overall likelihood can be computed by substituting the respective sampling distribution from the island model and the simple model for $p(\text{ST }i(h)\vert\text{source }j)$ in equation~(\ref{Olikh}). 
+
+
+\subsection{Campylobacteriosis data}
+The source attribution study used here has MLST data collected in the Manawatu region of New Zealand from 2005 to 2014. The sampling has been done in the same time and from the same geographical location that gives 3,480 isolates taken from human and non-human cases, 1,400 of which are from humans. The non-human isolates are sampled from cattle, sheep, wild birds, environmental water and chicken carcasses, and we therefore put them into four groups of major source of infection: poultry, ruminant, water and others. The total number of unique ST typed from all isolates is 355, and 35\% of genotypes are found among human cases. Table~(\ref{tab1}) lists five common genotypes typed in human and source isolates. The first four genotypes are frequently observed in human cases. For four sources, ST-45 and ST-474 are commonly detected in poultry, while ST-42 and ST-61 are typically found in ruminants. Some studies also discover that human cases with ST-45 or ST-474 are likely attributable to poultry, whereas human cases with ST-42 or ST-61 are more likely attributable to ruminants \cite{Muell, Coll, Cart}. Furthermore, it also shows that there are no observations of ST-2381 in humans, poultry or ruminants, indicating that the genotype may only appear in the water or other sources.
+
+The data also contain location variables such as a binary variable specifying whether a typed human case is from urban or rural areas, and a categorical variable further splitting up the areas into seven levels: highly rural/remote area, rural area with low urban influence, rural area with moderate urban influence, rural area with high urban influence, independent urban area, satellite urban area and main urban area. Figure~(\ref{fig1}) presents the number of typed human cases living either in urban or rural areas between 2005 and 2014. It shows that the number of typed cases in urban areas was more than that in rural areas, particularly from 2005 to 2007, then it dropped in 2008 and rose up steadily in the following years. The results are from an intervention in the poultry industry implemented by the New Zealand Food Safety Authority (NZFSA) in 2007 and 2008. Table~(\ref{tab2}) further lists the number of typed human cases in each classification of rurality. The degree of rurality is a set of integers with a range of [-3,3] corresponding to each defined geographical level. Overall, the table tells us that more than 70\% of typed cases lived in urban areas, and approximately 7.5\% of individuals have no information about the location. We will neglect the missing data in the following analysis by assuming that these cases are randomly missing. Also, as 2006 Census Meshblock Dataset pointed out \cite{Stat}, the total number of dwellers living in urban and rural areas in the Manawatu region was 130,962 and 20,337, respectively. Suppose the population size in the region during 2005 and 2014 is constant, the case rates of the two areas in 2006 are similar with about 0.12\%, this then implies that more cases found in urban areas is simply because more residents are living there. After the intervention, the rate in rural areas still stays at the same level, but the rate in urban areas remarkably decreases. 
+
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{crrrrr}
+      \toprule
+      ST & Human & Poultry & Ruminants & Water & Others\\ \midrule
+      42 & 54 & 7 & 52 & 10 & 2\\
+      45  & 141 & 154 & 10 & 21 & 54\\
+      61 & 64 & 7 & 54 & 2 & 1\\
+      474 & 239 & 60 & 15 & 5 & 7\\
+      2381 & 0 & 0 & 0 & 21 & 3\\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \caption{The frequency of five genotypes found from human and four source isolates.}
+  \label{tab1}
+\end{table}
+
+\begin{figure}
+\centering
+%\includegraphics[width=.5\linewidth]{Figures/Databar}
+\caption{The number of typed human cases coming from urban/rural areas in the Manawatu region of New Zealand during 2005 and 2014. A poultry intervention conducted in 2007 and 2008 resulted in a decreasing incidence of campylobacteriosis in the following two years in urban areas.}
+\label{fig1}
+\end{figure}
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{rlrr}
+      \toprule
+      Rurality scale & Description & Typed human cases & Population in 2006\\ \midrule
+      -3 & Highly rural/remote area & 19 & 1,572\\
+      -2 & Rural area with low urban influence & 92 & 8,373\\
+      -1 & Rural area with moderate urban influence & 127 & 10,392\\
+      0 & Rural area with high urban influence & 70 & 6,579\\
+      1 & Independent urban area & 230 & 28,611\\
+      2 & Satellite urban area & 178 & 19,725\\
+      3 & Main urban area & 579 & 76,047 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \caption{The number of human cases typed during 2005 and 2014 in the Manawatu region of New Zealand whose location fell in each grade of rurality corresponding to the defined area against the respective total number of residents in 2006. In general, the scales that ranged between 0 and 3 are regarded as the urban areas and the remaining scales belong to the rural areas.}
+  \label{tab2}
+\end{table}
+
+\section{Model fitting for source attribution on rurality scale}
+The island model and the simple model in the preceding section describe the distribution of STs by integrating with or without genetic variations in DNA sequences respectively. To further estimate the attribution probability a source contributes the infection to human beings, let $F_{jh}$ denote the attribution probability of source $j$ for the h$^{th}$ human case, with constraints $\sum_{j=1}^J F_j =1$ and $0 \leq F_j \leq 1$, where $j=1, \ldots, J$. We model the probabilities $F_{jh}$ using a linear model on the logit scale, that is,  
+
+\begin{align}
+  F_{jh}  = \frac{\exp (f_{jh})}{\sum_{j=1}^4 \exp(f_{jh})},
+  \label{capF}
+\end{align}
+
+where $f_{4h}=0$ is treated as the baseline of $f_{jh}$. Consider the case where the data comprise of $H$ human cases, and with the associated assigned STs and $p$ variables, we develop a general model of $f_{jh}$ with linear combinations of the variables, $c_1, \ldots, c_p$. The model for the h$^{th}$ individual is then of the form,
+
+\begin{align}
+f_{jh}  = \alpha_{j} + \beta_{j1} c_{1h} + \beta_{j2} c_{2h} + \ldots + \beta_{jp} c_{ph},  \notag   
+\end{align}
+
+so that more covariates can be considered in the model to further investigate how the attribution is associated with the factors of interest.
+
+To apply the general model of $f_{jh}$ to the campylobacteriosis data, assume $z$ is the categorical variable representing the classified location of each human case. Then two approaches of treating the variable $z$ in model fitting are proposed: one is to treat it as numeric, and the other as categorical. To differentiate the performance between the two fitted models, we link ``the linear model'' and ``the categorical model'' to the first and the latter fitted model, respectively. Hence, the linear prediction function for source $j$ for each human case given the degree of rurality is a numeric variable and can be written as,
+
+\begin{align}
+  f_{jh} = \alpha_{j} + \beta_{j} z_{h},
+  \label{modL}
+\end{align}
+
+where $z_{h}$ can be any number of the seven scales if case $h$ was from such a degree of rurality. Conversely, if we treat each of the seven rurality degrees as an indicator with a superscript number $d$, which corresponds with the position of the category ranged from -3 to 3, the model~(\ref{modL}) can be rewritten as,
+
+\begin{align}
+  f_{jh} & = \beta_{1j} z_{1h}+ \beta_{2j} z_{2h} + \ldots + \beta_{dj} z_{dh} + \ldots +  \beta_{7j} z_{7h}, \\
+  \text{where} & \notag\\
+z_{dh} & =
+\left\{\begin{array}{rcl}
+1 && \mbox{if case $h$ is in the category $d$,} \notag \\ 0 && \mbox{otherwise}. 
+\end{array}\right.
+  \label{modC}
+\end{align}
+
+As a consequence, the estimated attribution probabilities are obtained via equation~(\ref{capF}) after fitting the data to model~(\ref{modL}) or to model (4).
+
+\subsection{MCMC algorithm}
+In the interest of quantifying the uncertainty of the posterior attribution probability, the Markov chain Monte Carlo (MCMC) method is applied. Assume the priors on parameters of interest in model~(\ref{modL}) and model (4) follow a standard normal distribution. Denote $\boldsymbol{\theta}$ as a parameter set of $\theta_{(t)}$, where t indicates the t$^{th}$ order of parameters in the model, $t=1, \ldots, T$, namely, either $(\alpha_1, \alpha_2, \alpha_3, \beta_1, \beta_2, \beta_3)$ in model~(\ref{modL}) or $(\beta_{11}, \beta_{12}, \ldots, \beta_{dj}, \ldots, \beta_{73})$ in model (4). We use the Metropolis-Hastings algorithm to update $\theta_{(t)}$ and hence $f_{jh}$, and $ F_{jh}$ in a Markov chain with a length of 30,000 iterations. With the aim of the chain convergence, the first 5,000 samples are removed and the sequence is thinned every 10$^{th}$ sample. Here are the steps in detail:
+
+\begin{enumerate}
+
+\item Sample $T$ random values from $N(0,1)$ as starting points of the parameter set $\boldsymbol{\theta}$ for model~(\ref{modL}) or model (4) 
+
+\item Propose a candidate $\boldsymbol{\theta}^*$ with one $\theta_{(t)}$ updated by a normal proposal distribution, $N(\theta_{(t)}, 1)$
+
+\item Use $\boldsymbol{\theta}^*$ to calculate a new set of $f^*$ for source $j$, $j=1, 2, 3$, via model~(\ref{modL}) or model (4), and find the associated $F^*$ for each case by putting the vector $(f^*, f_4=0)$ in equation~(\ref{capF}) 
+  
+\item Compute the acceptance rate $\alpha$, a product of the likelihood ratio, the proposal ratio and the prior ratio, given by,
+
+\begin{align*}
+\frac{L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)}{L\Big(F; \text{ST}, \boldsymbol{Z}\Big)}\frac{Q\Big(\theta_{(t)} \vert \theta_{(t)}^*\Big)}{Q\Big(\theta_{(t)}^* \vert \theta_{(t)}\Big)}\frac{p\Big(\theta_{(t)}^*\Big)}{p\Big(\theta_{(t)}\Big)}, 
+\end{align*}
+
+where the likelihood $L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)$ involves the rurality covariate $\boldsymbol{Z}$ resulting from the attribution probability, $p(\text{source }j\vert \boldsymbol{Z}$) with an assumption that the genotype distribution on sources is independent of the covariate. Then, a random value of $u$ is generated from $U(0,1)$. If $\alpha$ meets $u < \min \left\{1, \alpha \right\}$, in the next state the current proposals of $f^{(*)}$, $F^{(*)}$ and $L\Big(F^{(*)}; \text{ST}, \boldsymbol{Z}\Big)$ are updated; otherwise, the previous proposals are retained. 
+\end{enumerate}
+
+%KEEP IT IN .TEX AND ADD IT AS COMMENTS IN YOUR CODE. The above function can be equivalently written as a product of the likelihood ratio and the prior ratio due to an assumption of the symmetric proposal function $Q$ resulting in $\frac{Q(\theta_{(t)} \vert \theta_{(t)}^*)}{Q(\theta_{(t)}^* \vert \theta_{(t)})}=1$. For the prior ratio in the later part of above function, we can obtain by calculating,
+
+%\begin{align*}
+%\frac{p(\theta_{(t)}^*)}{p(\theta_{(t)})} & =\frac{\frac{1}{\sqrt{2\pi\sigma^2}}\exp (-\frac{1}{2}\frac{\theta_{(t)}^*^2}{\sigma^2})}{\frac{1}{\sqrt{2\pi\sigma^2}}\exp (-\frac{1}{2}\frac{\theta_{(t)}^2}{\sigma^2})}\\
+%& = \exp\Big(\frac{\theta_{(t)}^2-\theta_{(t)}^*^2}{2\sigma^2}\Big).
+%\end{align*}
+
+\section{Results}
+
+\begin{figure}
+\centering
+%\includegraphics[width=.9\linewidth]{Figures/FCILandC(5)}
+\caption{The posterior mean of samples $F$ with 80\% HPD interval for source: poultry (red), ruminants (green), water (blue) and others (pinks) over the rurality degrees. The samples of attribution probability are generated from the two respective fitted models: the linear model (upper panel) and the categorical model (lower panel), given the sampling distribution of genotypes with evolutionary information (the island model) or without any genetic information (the simple model).}
+\label{fig2}
+\end{figure}
+
+\begin{figure}
+\centering
+%\includegraphics[width=.9\linewidth]{Figures/FCILandC(8)}
+\caption{The posterior mean of samples $F$ with 80\% HPD interval for four sources over seven rurality categories after applying our methods to data with the post-intervention time period from 2008 to 2014. The samples of attribution probability are generated from the two respective fitted models -- the linear model (upper panel) and the categorical model (lower panel) -- given the genotype distribution based upon the island model or the simple model.}
+\label{fig3}
+\end{figure}
+
+To investigate the association between source attribution and human infection, we apply the methods demonstrated in the preceding sections to the campylobacteriosis data and also rearrange the data frame from the ST-based structure to the case-based one for model fitting. The posterior mean of samples $F$ with the 80\% highest posterior density (HPD) interval for each source is illustrated on each rurality grade in Figure~(\ref{fig2}). Given different genotype distributions, the upper panel of the figure is based on the linear model, whereas the lower panel is generated from the categorical model.
+
+%80% credible interval can be 10th through 90th percentile (central credible interval) or highest posterior intervals where 80% is picked that minimises length
+%
+For the linear model, the simple model suggests a slightly higher attribution probability for poultry and a little decreased probability for ruminants in main urban areas, compared to what the island model estimates. Also, the 80\% HPD interval of $F$ for poultry and for ruminants based on the simple model seems marginally wider than that for the island model. So, there is no significant difference in the proportion of human cases attributed to each source between the island and the simple models. For the categorical model, the comparison between the island and the simple models is quite similar to that for the linear model except for the distinguishable attribution for poultry and ruminants in highly rural areas and the much wider credible intervals of $F$ for four sources. For the two fitted models, the narrower credible intervals noticed in very rural areas from the island model might indicate that the island model gives a little more accurate sampling distribution for poultry and ruminants genotypes especially typed in humans living in rural areas. Further, the relatively larger credible intervals observed in the categorical model might be the effect of allocating the number of cases to each qualitative scale (as a dummy variable), particularly in rural areas due to small observations.
+
+As is known, poultry is the major cause of human campylobacteriosis in urban areas \cite{MullA, Marsh, MullM}. Figure~(\ref{fig2}) shows further evidence that poultry starts becoming the dominant source contributable to the infection from places between minor rural and minor urban areas. In contrast, ruminants are becoming the most attributable source when locations are getting farther away from rural areas with a moderate urban influence. As to water and other sources, they seem to be less influenced by the rurality levels because the probabilities remain less than 0.2 over the seven categories.
+
+Moreover, with a view to examining the robustness of our results, the approach is also applied to data with the time period of post-intervention from 2008 to 2014. The source attribution at different rurality levels is then illustrated in Figure~(\ref{fig3}), displaying that the overall attribution over four sources is moderately consistent with the patterns we previously discovered. However, Figure~(\ref{fig3}) shows a marked decline of attribution probability for poultry and a small rise in probability for ruminants in main urban areas. Despite the fact that the intervention did not eliminate the infection arising from poultry \cite{MuelM}, the reduction highlights the significant improvement in contribution of poultry to the disease, particularly in urban areas where most cases lived. This finding also accords with what Sears A. and other researchers investigated for the effect on poultry intervention \cite{AnnS}. 
+
+Last, we use deviance information criterion (DIC) to evaluate if the linear model or the categorical model is more suitable to describe the data with different time periods of study. Given the sequence type information from the island model and the simple model, Table~(\ref{tab3}) compares the DIC values of the linear model to that of the categorical model, applied to data with the whole period of study and to data with the post-intervention time period. It tells that the linear model always performs better than the categorical model as this model is penalized more in DIC due to the larger number of parameters. This shows that the assumption of a linear effect on the rurality scales against the source attribution is reasonable. 
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{crrrrr}
+      \toprule
+      & \multicolumn{2}{c}{Island model}  & \multicolumn{1}{c}{} & \multicolumn{2}{c}{simple model} \\
+      %&  \cmidrule(lr){2-3}\cmidrule(lr){5-6} 
+      Data & Linear & Categorical & & Linear & Categorical\\ \midrule
+      whole period  & 7913.6 & 7943.3  & & 10328.4  & 10389.8 \\
+      post-intervention period  & 5413.4  & 5439.5  & & 6615.1   & 6668.9 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \caption{DIC values for the linear model and for the categorical model applied to the data from 2005 to 2014 (whole period) and to the data from 2008 to 2014 (post-intervention period) given the genotypic information is from the island model or the simple model.}
+  \label{tab3}
+\end{table}
+
+\section{Discussions}
+In recent epidemiological literature, modeling for zoonotic diseases with genomic data has commonly emerged that provides an added value to unravel the transmission of pathogens, but increases difficulties in analytically assessing models. In this paper, with an application of a campylobacteriosis study, we not only compare the source attribution based on the genotype distribution with or without pathogenic evolutionary information, but also unfold the infection attributable to sources at different geographical levels. 
+
+In light of the different estimates of sampling distribution of genotypes from the island and the simple models, two approaches of model fitting (linear and non-linear) are utilized to estimate the attribution probability via the Matropolis-Hastings algorithm. The estimate of attribution probability $F$ is not straightforward as it is on a logit scale. To examine how the values of $f$ affect the attribution probabilities, we change the standard deviation of the prior distribution from 1 to 2 in the algorithm. It turns out that the associated posterior mean of $F$ for each source is invariant despite the fact that the proposals of $f$ jump even wider in the random walk. This is because the denominator of the transformation equation~(\ref{capF}) balances the impact made by $f$. Further, a linear model is applied to fit the data, assuming the relationship between the predictor and the response variable is linear. This assumption is also in some way supported by the results produced by the categorical model as it displays a linear-like pattern, illustrating how the level of rurality affects the attribution probability. 
+
+This study can contribute considerably to the assessment of the final inference made between the models considered with and without the genetic information. The source attribution estimated by the linear and the non-linear models agrees fairly given two different genotype distributions, indicating that the simple model can at least do similar work to the island model. Also, the extension of the developed model fitting for this application is attainable. There are two possible directions: the genetic data, which will become more comprehensive due to rapidly evolving molecular tools, and the role of water source.
+
+Concerns about the water source have been recently raised \cite{Wagen}. Water plays an important role in the transmission network that can disperse pathogens to uninfected users such as humans, wild birds and livestock over wide areas \cite{Cart, Skel, Leve, Case}. But, water is unlike hosts providing a physical environment to pathogens evolving and amplifying; it is simply a medium storing pathogens that come from infected users, and passes them to the next users who are yet to be infected. Hence, excluding water as a source of infection and discovering a better way to consider it in the extended model will be one of the next steps. Furthermore, a novel MLST approach, whole-genome MLST (wgMLST), has recently appeared in the literature \cite{Bigg, Kova, Llar}. The wgMLST method considers more than 1,000 loci enabling the investigation of the association between isolates with identical allelic profiles and the common source of infection. The new genotyping approach overcomes the limit of the traditional MLST method that only captures genetic diversity on seven loci \cite{Bigg}. This means that how to select invaluable information from such large data, and how to develop a sophisticated model to fit the well-filtered data, will be two potential challenges in future research.
+
+
+\section*{Acknowledgements}
+% We would like to thank two anonymous reviewers for their helpful comments and suggestions, which have led to an improved version of the paper.
+
+%\appendix
+%\section{Appendix A}
+
+\bibliography{BibArt}
+\end{document} 
