@@ -38,27 +38,27 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
   # (techinically only need non-primary types, but it's easiest to return
   # all, and they're interesting anyway)
   type = labels(mod.terms)
-  unique = !duplicated(data[,type])
+  unique = !duplicated(data[[type]])
 
   # filter out the non-primaries, and unique types
-  sources = data[!(data[,response] %in% non_primary),]
+  sources = data[!(data[[response]] %in% non_primary),]
   types = data[unique,]
 
   # convert reponse variable to a factor, and then to numeric
-  sources[,response] = droplevels(as.factor(sources[,response]))
-  source_names = levels(sources[,response])
-  sources[,response] = as.numeric(sources[,response])
+  sources[[response]] = droplevels(as.factor(sources[[response]]))
+  source_names = levels(sources[[response]])
+  sources[[response]] = as.numeric(sources[[response]])
 
   sources.frame = model.frame(formula, data = sources)
   allele.frame  = model.frame(sequences, data = sources)
 
-  source.frame = cbind(Type=sources.frame[,type], allele.frame, Source=sources.frame[,response])
+  source.frame = cbind(Type=sources.frame[[type]], allele.frame, Source=sources.frame[[response]])
 
   # add on the unique types to estimate the sample distribution on
   types.frame = model.frame(formula, data = types)
   allele.frame  = model.frame(sequences, data = types)
 
-  type.frame = cbind(Type=types.frame[,type], allele.frame, Source=0)
+  type.frame = cbind(Type=types.frame[[type]], allele.frame, Source=0)
 
   # convert to a matrix
   island.mat = as.matrix(rbind(source.frame, type.frame))
