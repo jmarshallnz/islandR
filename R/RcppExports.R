@@ -2,10 +2,10 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 log_lik <- function(humans, phi, p) {
-    .Call('islandR_log_lik', PACKAGE = 'islandR', humans, phi, p)
+    .Call('_islandR_log_lik', PACKAGE = 'islandR', humans, phi, p)
 }
 
 island <- function(isolates, niter = 10000L) {
-    .Call('islandR_island', PACKAGE = 'islandR', isolates, niter)
+    .Call('_islandR_island', PACKAGE = 'islandR', isolates, niter)
 }
 

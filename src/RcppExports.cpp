@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // log_lik
 double log_lik(NumericMatrix humans, NumericMatrix phi, NumericVector p);
-RcppExport SEXP islandR_log_lik(SEXP humansSEXP, SEXP phiSEXP, SEXP pSEXP) {
+RcppExport SEXP _islandR_log_lik(SEXP humansSEXP, SEXP phiSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,7 +20,7 @@ END_RCPP
 }
 // island
 List island(IntegerMatrix isolates, int niter);
-RcppExport SEXP islandR_island(SEXP isolatesSEXP, SEXP niterSEXP) {
+RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP niterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,4 +29,15 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(island(isolates, niter));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_islandR_log_lik", (DL_FUNC) &_islandR_log_lik, 3},
+    {"_islandR_island", (DL_FUNC) &_islandR_island, 2},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_islandR(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
