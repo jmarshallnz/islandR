@@ -78,8 +78,14 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
   }
   hum_lik = lapply(out$hum_lik, set_names)
 
+  # assign names to the evolution traces
+  colnames(out$evolution) <- c("Iteration",
+                               apply(as.matrix(expand.grid("A",1:length(source_names),1:(length(source_names)+1))), 1, paste0, collapse=""),
+                               paste0("R", 1:length(source_names)),
+                               "Likelihood")
+
   # righto, now construct a useful object...
-  x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = out$evolution, model = "island")
+  x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = data.frame(out$evolution[-1,]), model = "island")
   class(x) = c("island", "sample_dist")
   x
 }
