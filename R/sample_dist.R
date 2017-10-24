@@ -6,15 +6,16 @@ NULL
 #' @param formula A formula of the form Source ~ Genotype
 #' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
-#' @param method the method to use to fit the genotype distribution. Only \code{"island"} is supported currently.
+#' @param method the method to use to fit the genotype distribution. \code{"island"} and \code{"dirichlet"} are supported currently.
 #' @param data optional data frame from which to take variables in \code{formula}.
 #' @param ... further paramters to pass to the method-specific fitting algorithms.
 #' @return an object derived from class sampling_dist.
 #' @seealso \code{\link{st_fit_island}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
-st_fit <- function(formula, non_primary = "Human", method="island", data, ...) {
+st_fit <- function(formula, non_primary = "Human", method=c("island", "dirichlet"), data, ...) {
   type <- match.arg(method)
   switch(type,
-         island = st_fit_island(formula=formula, non_primary=non_primary, data=data, ...))
+         island = st_fit_island(formula=formula, non_primary=non_primary, data=data, ...),
+         dirichlet = st_fit_dirichlet(formula=formula, non_primary=non_primary, data=data, ...))
 }
 
 #' Print a sample_dist object

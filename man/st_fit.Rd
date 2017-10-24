@@ -4,7 +4,8 @@
 \alias{st_fit}
 \title{Fit the sampling distribution of genotypes to sources using different models.}
 \usage{
-st_fit(formula, non_primary = "Human", method = "island", data, ...)
+st_fit(formula, non_primary = "Human", method = c("island", "dirichlet"),
+  data, ...)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}
@@ -12,7 +13,7 @@ st_fit(formula, non_primary = "Human", method = "island", data, ...)
 \item{non_primary}{one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 but P(ST | source) will be computed for these STs in addition to those observed on other sources.}
 
-\item{method}{the method to use to fit the genotype distribution. Only \code{"island"} is supported currently.}
+\item{method}{the method to use to fit the genotype distribution. \code{"island"} and \code{"dirichlet"} are supported currently.}
 
 \item{data}{optional data frame from which to take variables in \code{formula}.}
 
