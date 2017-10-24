@@ -11,7 +11,8 @@ manawatu_sources <- read.csv("extract_for_attribution.csv")
 # remap the sources
 manawatu_sources <- manawatu_sources %>%
   filter(Source != "Human") %>%
-#  filter(Source != "Environmental water", Source != "Wild_bird") %>%
+  filter(Source != "Environmental water") %>%
+#  filter(Source != "Wild_bird") %>%
 #  mutate(SampledDate = as.Date(as.character(SampledDate))) %>%
 #  filter(SampledDate >= "2014-01-01") %>%
   mutate(Source = as.character(fct_collapse(Source,
@@ -20,7 +21,7 @@ manawatu_sources <- manawatu_sources %>%
                                          "Turkey", "Duck_poultry"),
                                Ruminants=c("Sheep", "Cattle"),
                                Other=c("Cat_dog_pet", "Pig"),
-                               Wild_bird = c("Water_bird_wild", "Wild_bird_other"))))
+                               `Wild bird` = c("Water_bird_wild", "Wild_bird_other"))))
 
 # read in human data
 havelock <- read_excel("For Massey 21 Aug2016a.xlsx",sheet=2)
