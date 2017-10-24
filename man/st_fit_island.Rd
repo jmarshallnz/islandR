@@ -5,7 +5,7 @@
 \title{Fit the sampling distribution of genotypes to sources using the assymmetric island model.}
 \usage{
 st_fit_island(formula, sequences, non_primary = "Human", iters = 10000,
-  data)
+  priors = list(migration = 1, recombination = 1), data)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}
@@ -17,6 +17,8 @@ but P(ST | source) will be computed for these STs in addition to those observed 
 
 \item{iters}{the number of iterations to sample. An additional burnin period of 10% of this value will be used, and
 100 samples will be taken (or every sample, whichever is smaller).}
+
+\item{priors}{- a list of priors for the fit. Defaults to 1,1.}
 
 \item{data}{optional data frame from which to take variables in \code{formula} and \code{sequence}.}
 }

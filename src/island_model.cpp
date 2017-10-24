@@ -7,15 +7,14 @@ using namespace Rcpp;
 // run island model
 
 // [[Rcpp::export]]
-List island(IntegerMatrix isolates, int niter = 10000) {
+List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int niter = 10000) {
 
   // create model class
   Island island;
   island.initialise(isolates);
 
-  double alpha = 1.0;
-  double beta  = 1.0;
-  double gamma = 1.0;
+  double beta  = beta_migration[0];
+  double gamma = gamma_recombination[0];
 
   int thin  = 50;
 

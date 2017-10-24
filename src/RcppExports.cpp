@@ -19,21 +19,23 @@ BEGIN_RCPP
 END_RCPP
 }
 // island
-List island(IntegerMatrix isolates, int niter);
-RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP niterSEXP) {
+List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int niter);
+RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP beta_migrationSEXP, SEXP gamma_recombinationSEXP, SEXP niterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type isolates(isolatesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta_migration(beta_migrationSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type gamma_recombination(gamma_recombinationSEXP);
     Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
-    rcpp_result_gen = Rcpp::wrap(island(isolates, niter));
+    rcpp_result_gen = Rcpp::wrap(island(isolates, beta_migration, gamma_recombination, niter));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_islandR_log_lik", (DL_FUNC) &_islandR_log_lik, 3},
-    {"_islandR_island", (DL_FUNC) &_islandR_island, 2},
+    {"_islandR_island", (DL_FUNC) &_islandR_island, 4},
     {NULL, NULL, 0}
 };
 
