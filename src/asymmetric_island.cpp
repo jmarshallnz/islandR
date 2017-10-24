@@ -172,7 +172,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double alpha, const double beta, const double gamma_, const int niter, const int thin) {
+void Island::mcmc6f(const double beta, const double gamma_, const int niter, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */

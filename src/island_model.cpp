@@ -21,7 +21,7 @@ List island(IntegerMatrix isolates, int niter = 10000) {
 
   // output traces. The thin here is how often we sample the evolution parameters.
   // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
-  island.mcmc6f(alpha, beta, gamma, niter, thin);
+  island.mcmc6f(beta, gamma, niter, thin);
 
   return island.human_likelihoods;
 }
