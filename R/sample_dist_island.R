@@ -76,10 +76,10 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
     colnames(x) = source_names
     x
   }
-  out = lapply(out, set_names)
+  hum_lik = lapply(out$hum_lik, set_names)
 
   # righto, now construct a useful object...
-  x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(out), model = "island")
+  x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = out$evolution, model = "island")
   class(x) = c("island", "sample_dist")
   x
 }

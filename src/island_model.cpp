@@ -22,5 +22,8 @@ List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector 
   // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
   island.mcmc6f(beta, gamma, niter, thin);
 
-  return island.human_likelihoods;
+  List out;
+  out["hum_lik"] = island.human_likelihoods;
+  out["evolution"] = island.evolution_traces;
+  return out;
 }
