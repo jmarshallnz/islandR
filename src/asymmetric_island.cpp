@@ -5,6 +5,8 @@
 
 #include <Rcpp.h>
 
+#include "logdouble.h"
+
 using namespace Rcpp;
 
 double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
@@ -39,8 +41,8 @@ double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &
 				double mii = A(i,ii)/(1.0-A(i,ng));
 				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
 					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
-						: ABUN[ii][jj];
-					double l_jj = mii;
+						: ABUN[ii][jj]; // NOTE: This can be zero.
+					logdouble l_jj = mii;
 					LogicalMatrix::Row BEAST_UNIQUE = beast_unique[i](j, _);
 					bool *SAME = ksame[i][j][ii][jj];
 					for (int l = 0; l < nloc; l++, SAME++) {
@@ -54,7 +56,7 @@ double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &
 							l_jj *= pdiff[l];
 						}
 					}
-					l_ii += l_jj * ncopiesjj;
+					l_ii += exp(l_jj.log()) * ncopiesjj;
 				}
 				l_j += l_ii / size[ii];
 			}
