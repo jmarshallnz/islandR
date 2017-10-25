@@ -35,7 +35,7 @@ double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &
 				}
 				pdiff[l] = b_;
 			}
-			double l_j = 0.0;
+			std::vector<logdouble> l_j(ng);
 			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
 				double mii = A(i,ii)/(1.0-A(i,ng));
 				std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
@@ -58,10 +58,9 @@ double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &
 					}
 					l_ii[jj] = l_jj * ncopiesjj;
 				}
-				logdouble logl_ii = sum(l_ii) / size[ii];
-				l_j += exp(logl_ii.log());
+				l_j[ii] = sum(l_ii) / size[ii];
 			}
-			loglik += log(l_j) * ncopiesj;
+			loglik += sum(l_j).log() * ncopiesj;
 		}
 	}
 	return loglik;
