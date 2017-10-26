@@ -1,8 +1,8 @@
 Package: islandR
 Type: Package
 Title: Estimates Source Attribution Probabilities
-Version: 0.1
-Date: 2015-07-02
+Version: 0.2
+Date: 2017-10-26
 Authors@R: c(person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz", role = c("aut", "cre")),
              person("Daniel", "Wilson", email = "daniel.wilson@ndm.ox.ac.uk", role = "aut"))
 Description: Estimates source attribution probabilities using genotype data in
