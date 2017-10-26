@@ -10,7 +10,7 @@
 using namespace Rcpp;
 
 double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
-	double loglik = 0.0;
+	logdouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
 		double punique = A(i,ng);
@@ -60,10 +60,10 @@ double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &
 				}
 				l_j[ii] = sum(l_ii) / size[ii];
 			}
-			loglik += sum(l_j).log() * ncopiesj;
+			lik *= sum(l_j)^ncopiesj;
 		}
 	}
-	return loglik;
+	return lik.log();
 }
 
 double Island::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
