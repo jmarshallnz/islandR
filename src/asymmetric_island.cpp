@@ -109,7 +109,7 @@ void Island::precalc() {
   for(int i = 0; i < human.nrow(); i++) {
     for(int l = 0; l < nloc; l++) {
       int human_allele = human(i, l);
-      human_unique(i,l) = (human_allele>=acount[ng][l].size()
+      human_unique(i,l) = (human_allele>=(int)acount[ng][l].size()
                              || acount[ng][l][human_allele]==0);
     }
   }
@@ -395,7 +395,7 @@ Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {
     b[i].resize(nloc);
     for(int j = 0; j < nloc; j++) {
       b[i][j].resize(acount[i][j].size());
-      for(int k = 0; k < acount[i][j].size(); k++) {
+      for(size_t k = 0; k < acount[i][j].size(); k++) {
         b[i][j][k] = 0.0;
         for(int l = 0; l < ng; l++) {
           b[i][j][k] += acount[l][j][k] * A(i,l);
