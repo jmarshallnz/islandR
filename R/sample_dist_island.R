@@ -80,7 +80,7 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
 
   # assign names to the evolution traces
   colnames(out$evolution) <- c("Iteration",
-                               apply(as.matrix(expand.grid("A",1:length(source_names),1:(length(source_names)+1))), 1, paste0, collapse=""),
+                               apply(as.matrix(expand.grid("A",1:(length(source_names)+1),1:length(source_names)))[,c(1,3,2)], 1, paste0, collapse=""),
                                paste0("R", 1:length(source_names)),
                                "Likelihood")
 
