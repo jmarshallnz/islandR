@@ -163,25 +163,25 @@ Previously we described how to estimate the marginal probabilities that a random
   F_{jh}  = \frac{\exp (f_{jh})}{\sum_{j=1}^4 \exp(f_{jh})},
   \label{capF}
 \end{align}
-where $f_{4h}=0$ is treated as the baseline of $f_{jh}$. Consider the case where the ST data for each human case is supplemented by $p$ additional variables. We develop a general model of $f_{jh}$ with linear combinations of the variables, $c_1, \ldots, c_p$. The model for the $h^\textrm{th}$ individual is then of the form,
+where $f_{4h}=0$ is treated as the baseline of $f_{jh}$. Consider the case where the ST data for each human case is supplemented by $p$ additional variables. We develop a general model of $f_{jh}$ with linear combinations of the variables, $c_1, \ldots, c_p$. The model for the $h^\textrm{th}$ individual is then of the form
 \begin{align}
 f_{jh}  = \alpha_{j} + \beta_{j1} c_{1h} + \beta_{j2} c_{2h} + \ldots + \beta_{jp} c_{ph},  \notag
 \end{align}
 so that more covariates can be considered in the model to further investigate how the attribution is associated with the factors of interest. Note that if there is a single categorical variable with $L$ levels, then $F_{jh}$ and $f_{jh}$ will take no more than $L$ distinct values. In a slight abuse of notation, we will at times refer to $F_{jh}$ in which the $h$ index refers to the factor level, rather than to a particular subject at that level.
 
-To apply the general model of $f_{jh}$ to the campylobacteriosis data, assume $z$ is the categorical variable representing the classified location of each human case. Then two ways of treating the variable $z$ in model fitting are proposed: one is to treat it as numeric, and the other as categorical. To differentiate the performance between the two fitted models, we link ``the linear model'' and ``the categorical model'' to the first and the latter fitted model, respectively. Hence, the linear prediction function for source $j$ for each human case given the degree of rurality is a numeric variable and can be written as,
+To apply the general model of $f_{jh}$ to the campylobacteriosis data, assume $z$ is the categorical variable representing the classified location of each human case. Then two ways of treating the variable $z$ in model fitting are proposed: one is to treat it as numeric, and the other as categorical. To differentiate the performance between the two fitted models, we link ``the linear model'' and ``the categorical model'' to the first and the latter fitted model, respectively. Hence, the linear prediction function for source $j$ for each human case given the degree of rurality is a numeric variable and can be written as
 \begin{align}
   f_{jh} = \alpha_{j} + \beta_{j} z_{h},
   \label{modL}
 \end{align}
-where $z_{h}$ can be any number of the seven scales if case $h$ was from such a degree of rurality. Conversely, if we treat each of the seven rurality degrees as an indicator with a superscript number $d$, which corresponds with the position of the category ranged from -3 to 3, the model~(\ref{modL}) can be rewritten as,
+where $z_{h}$ can be any number of the seven scales if case $h$ was from such a degree of rurality. Conversely, if we treat each of the seven rurality degrees as an indicator with a superscript number $d$, which corresponds with the position of the category ranged from -3 to 3, the model~(\ref{modL}) can be rewritten as
 \begin{equation}
   f_{jh} = \beta_{1j} z_{1h}+ \beta_{2j} z_{2h} + \ldots + \beta_{dj} z_{dh} + \ldots +  \beta_{7j} z_{7h},
   \label{modC}
 \end{equation}
 where
 \begin{equation*}
-z_{dh} & =
+z_{dh} =
 \left\{\begin{array}{rcl}
 1 && \mbox{if case $h$ is in the category $d$,} \notag \\ 0 && \mbox{otherwise}. 
 \end{array}\right.
@@ -192,19 +192,24 @@ As a consequence, the estimated attribution probabilities are obtained via equat
 In the interest of quantifying the uncertainty of the posterior attribution probability, we perform Bayesian inference for source attribution probabilities using Markov chain Monte Carlo (MCMC) methods. Assume the priors on parameters of interest in model~(\ref{modL}) and model (4) follow a standard normal distribution. Let $\boldsymbol{\theta}$ denote the vector of parameters, with elements $\theta_{t}$ for $t=1, \ldots, T$. For example, $\boldsymbol{\theta}=\{\alpha_1, \alpha_2, \alpha_3, \beta_1, \beta_2, \beta_3\}$ in model~\eqref{modL} or $\boldsymbol{\theta}=\{\beta_{11}, \beta_{12}, \ldots, \beta_{dj}, \ldots, \beta_{73}\}$ in model~\eqref{modC}. We use the Metropolis-Hastings algorithm to update $\theta_{(t)}$ and hence $f_{jh}$ and $ F_{jh}$, in a Markov chain with a length of 30,000 iterations. The first 5,000 samples are removed as the burn-in period (during which time the chain converges) and the sequence is thinned every 10$^{th}$ sample to reduce computer storage. Here are the steps in detail:
 
 \begin{enumerate}
-\item Sample $T$ random values from $N(0,1)$ as starting points of the parameter set $\boldsymbol{\theta}$ for model~(\ref{modL}) or model (4)
-  
-\item Propose a candidate $\boldsymbol{\theta}^*$ with one $\theta_{(t)}$ updated by a normal proposal distribution, $N(\theta_{(t)}, 1)$
+\setcounter{enumi}{-1}
+\item Sample $T$ random values from $N(0,1)$ as the initial values points of the parameter set $\boldsymbol{\theta}$ for model~\eqref{modL} or model~\eqref{modC}.
+\item Sample a permutation $P_T$ of $\{1, \ldots, T\}$.\label{algorithm_loop}
+\item For each $t \in P_T$:
+\begin{enumerate}
+\item Propose a candidate $\boldsymbol{\theta}^*$ with $\theta_{(t)}$ updated by a normal proposal distribution, $N(\theta_{(t)}, 1)$
 
-\item Use $\boldsymbol{\theta}^*$ to calculate a new set of $f^*$ for source $j$, $j=1, 2, 3$, via model~(\ref{modL}) or model (4), and find the associated $F^*$ for each case by putting the vector $(f^*, f_4=0)$ in equation~(\ref{capF}) 
- 
-\item Compute the acceptance rate $\alpha$, a product of the likelihood ratio, the proposal ratio and the prior ratio, given by,
-  
+\item Use $\boldsymbol{\theta}^*$ to calculate a new set of $f^*$ for source $j$, $j=1, 2, 3$, via model~\eqref{modL} or model~\eqref{modC}, and find the associated $F^*$ for each case by putting the vector $(f^*, f_4=0)$ in equation~\eqref{capF}
+
+\item Compute the acceptance probability $\alpha$, a product of the likelihood ratio, the proposal ratio and the prior ratio, given by
 \begin{align*}
-\frac{L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)}{L\Big(F; \text{ST}, \boldsymbol{Z}\Big)}\frac{Q\Big(\theta_{(t)} \vert \theta_{(t)}^*\Big)}{Q\Big(\theta_{(t)}^* \vert \theta_{(t)}\Big)}\frac{p\Big(\theta_{(t)}^*\Big)}{p\Big(\theta_{(t)}\Big)}, 
+\alpha=\frac{L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)}{L\Big(F; \text{ST}, \boldsymbol{Z}\Big)}\frac{Q\Big(\theta_{(t)} \vert \theta_{(t)}^*\Big)}{Q\Big(\theta_{(t)}^* \vert \theta_{(t)}\Big)}\frac{p\Big(\theta_{(t)}^*\Big)}{p\Big(\theta_{(t)}\Big)}, 
 \end{align*}
+where the likelihood $L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)$ involves the rurality covariate $\boldsymbol{Z}$ resulting from the attribution probability, $p(\text{source }j\vert \boldsymbol{Z}$) with an assumption that the genotype distribution on sources is independent of the covariate.
+\item Sample $u$ from $U(0,1)$. If $\alpha$ meets $u < \min \left\{1, \alpha \right\}$, in the next state the current proposals of $f^{(*)}$, $F^{(*)}$ and $L\Big(F^{(*)}; \text{ST}, \boldsymbol{Z}\Big)$ are updated; otherwise, the previous proposals are retained.
+\end{enumerate}
+\item Repeat from step \ref{algorithm_loop} for the given number of iterations.
 
-where the likelihood $L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)$ involves the rurality covariate $\boldsymbol{Z}$ resulting from the attribution probability, $p(\text{source }j\vert \boldsymbol{Z}$) with an assumption that the genotype distribution on sources is independent of the covariate. Then, a random value of $u$ is generated from $U(0,1)$. If $\alpha$ meets $u < \min \left\{1, \alpha \right\}$, in the next state the current proposals of $f^{(*)}$, $F^{(*)}$ and $L\Big(F^{(*)}; \text{ST}, \boldsymbol{Z}\Big)$ are updated; otherwise, the previous proposals are retained. 
 \end{enumerate}
 
 \section{Results}
