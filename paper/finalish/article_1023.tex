@@ -236,20 +236,20 @@ Figure~(\ref{fig2}) shows that poultry starts becoming the dominant source contr
 
 Moreover, with a view to examining the robustness of our results, the approach is also applied to data with the time period of post-intervention from 2008 to 2014. The source attribution at different rurality levels is then illustrated in Figure~(\ref{fig3}), displaying that the overall attribution over four sources is moderately consistent with the patterns we previously discovered. However, Figure~(\ref{fig3}) shows a marked decline of attribution probability for poultry and a small rise in probability for ruminants in main urban areas. Despite the fact that the intervention did not eliminate the infection arising from poultry \cite{MuelM}, the reduction highlights the significant improvement in contribution of poultry to the disease, particularly in urban areas where most cases lived. 
 
-Lastly, we use deviance information criterion (DIC) to evaluate if the linear model or the categorical model is more suitable to describe the data with different time periods of study. Given the sequence type information from the asymmetric Island model and the simple model, Table~(\ref{tab3}) compares the DIC values of the linear model to that of the categorical model, applied to data with the whole period of study and to data with the post-intervention time period. It tells that the linear model always performs better than the categorical model as this model is penalized more in DIC due to the larger number of parameters. This shows that the assumption of a linear effect on the rurality scales against the source attribution is reasonable. 
+Lastly, we use deviance information criterion (DIC) for model comparison. DIC values obtained from our MCMC runs are displayed in Table~\ref{tab3}. Overall there is a clear signal that a linear representation of rurality (on the logit scale) is adequate. Note that the asymmetric Island and Dirichlet models are not directly comparable by DIC as the likelihoods are on different scales: the Dirichlet model assumes all potential sequence types have been observed so that $\sum_j p(\boldsymbol{\pi}_j) = 1$, whereas the asymmetric Island model allows for unobserved sequence types so that $\sum_j p(\boldsymbol{\pi}_j) < 1$.
 
 \begin{table}
   \begin{center}
     \begin{tabular}{crrrrr}
       \toprule
-      & \multicolumn{2}{c}{Island model}  & \multicolumn{1}{c}{} & \multicolumn{2}{c}{Simple model} \\
+      & \multicolumn{2}{c}{Island model}  & \multicolumn{1}{c}{} & \multicolumn{2}{c}{Dirichlet model} \\
       Data & Linear & Categorical & & Linear & Categorical\\ \midrule
       whole period  & 7913.6 & 7943.3  & & 10328.4  & 10389.8 \\
       post-intervention period  & 5413.4  & 5439.5  & & 6615.1   & 6668.9 \\
       \bottomrule
     \end{tabular}
   \end{center}
-  \caption{DIC values for the linear model and for the categorical model applied to the data from 2005 to 2014 (whole period) and to the data from 2008 to 2014 (post-intervention period) given the genotypic information is from the asymmetric Island model or the simple model.}
+  \caption{DIC values for the linear model and for the categorical model applied to the data from 2005 to 2014 (whole period) and to the data from 2008 to 2014 (post-intervention period) given the genotypic information is from the asymmetric Island model or the Dirichlet model.}
   \label{tab3}
 \end{table}
 
