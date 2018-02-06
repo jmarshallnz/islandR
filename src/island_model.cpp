@@ -7,7 +7,7 @@ using namespace Rcpp;
 // run island model
 
 // [[Rcpp::export]]
-List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int niter = 10000) {
+List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int samples = 100, int burnin = 10, int thin = 100) {
 
   // create model class
   Island island;
@@ -16,11 +16,7 @@ List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector 
   double beta  = beta_migration[0];
   double gamma = gamma_recombination[0];
 
-  int thin  = 50;
-
-  // output traces. The thin here is how often we sample the evolution parameters.
-  // it is NOT how often we sample the probabilities, which is the only thing we care about ATM.
-  island.mcmc6f(beta, gamma, niter, thin);
+  island.mcmc6f(beta, gamma, samples, burnin, thin);
 
   List out;
   out["hum_lik"] = island.human_likelihoods;

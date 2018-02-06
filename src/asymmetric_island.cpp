@@ -174,7 +174,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double beta, const double gamma_, const int niter, const int thin) {
+void Island::mcmc6f(const double beta, const double gamma_, const int samples, const int burnin, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
@@ -211,7 +211,7 @@ void Island::mcmc6f(const double beta, const double gamma_, const int niter, con
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
-	evolution_traces = NumericMatrix(niter/thin+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
+	evolution_traces = NumericMatrix(samples+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
 	int trace_row = 0;
 	append_traces(0, A, R, loglikelihood, evolution_traces, trace_row++);
 
@@ -219,12 +219,11 @@ void Island::mcmc6f(const double beta, const double gamma_, const int niter, con
 //	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 //	Rcout << "Done 0 of " << niter << " iterations";
 
-	const int burnin = (int)floor((double)niter*.1);
-	const int inc = std::max((int)floor((double)niter/100.),1);
-	for (int iter = 0; iter < niter+burnin; iter++) {
-		if (iter>=burnin && (iter-burnin)%inc==0) {
+	for (int iter = 0; iter < (samples+burnin)*thin; iter++) {
+		if ((iter+1) % thin == 0 && iter/thin >= burnin) {
 
-			/* Now dump the likelihoods for this iteration.
+		  /* JM Changed: Thinning is now the same - we just want given number of samples */
+			/* Dump the likelihoods for this iteration.
 			   Weird that this has nothing to do with the thinning, which applies only
 		     to the evolutionary parameters. */
 
@@ -358,7 +357,7 @@ void Island::mcmc6f(const double beta, const double gamma_, const int niter, con
 		}
 
 		/* output thinned traces of island model fit */
-		if(iter >= burnin && (iter+1)%thin==0)
+		if((iter+1)%thin==0 && iter/thin >= burnin)
 		  append_traces(iter+1, A, R, loglikelihood, evolution_traces, trace_row++);
 
 //		if((current=clock())>next) {

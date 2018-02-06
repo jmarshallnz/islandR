@@ -39,8 +39,8 @@ public:
 	}
   void initialise(Rcpp::IntegerMatrix isolates);
 
-	// mcmc6f infers M and R from seqs of known origin, and runs 100 side-chains to infer F given M and R
-	void mcmc6f(const double beta, const double gamma_, const int niter, const int thin);
+	// mcmc6f infers M and R from seqs of known origin, sampling nsamples after nburnin samples, with given thinning
+	void mcmc6f(const double beta, const double gamma_, const int samples, const int burnin, const int thin);
 
 	~Island() {
 		/* free memory */

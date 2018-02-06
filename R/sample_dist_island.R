@@ -14,13 +14,14 @@ NULL
 #' @param sequences A formula of the form ~ASP + GLN + GLT specifying columns for the allelic profile of each type
 #' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
-#' @param iters the number of iterations to sample. An additional burnin period of 10% of this value will be used, and
-#'        100 samples will be taken (or every sample, whichever is smaller).
+#' @param samples the number of samples required from the posterior after burnin. Defaults to 100.
+#' @param burnin  the number of samples to discard for burnin. Defaults to 10.
+#' @param thin    the number of iterations per sample taken. Defaults to 100.
 #' @param priors - a list of priors for the fit. Defaults to 1,1.
 #' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class island which derives from sampling_dist.
 #' @seealso \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
-st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 10000, priors = list(migration=1,recombination=1), data) {
+st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 100, burnin = 10, thin = 100, priors = list(migration=1,recombination=1), data) {
   mod.terms = terms(formula, data=data)
   mod.frame = model.frame(formula, data=data)
   allele.frame = model.frame(sequences, data=data)
@@ -65,7 +66,7 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", iters = 100
   island.mat = as.matrix(rbind(source.frame, type.frame))
 
   # run the island model
-  out = island(island.mat, beta_migration = priors$migration, gamma_recombination = priors$recombination, niter = iters)
+  out = island(island.mat, beta_migration = priors$migration, gamma_recombination = priors$recombination, samples = samples, burnin = burnin, thin = thin)
 
   # now regenerate useful summary information... (in future assign names in C++ land?) Also
   # need to change output in C++ land so it gives all types rather than duplicates and only

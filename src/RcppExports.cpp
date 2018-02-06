@@ -19,23 +19,25 @@ BEGIN_RCPP
 END_RCPP
 }
 // island
-List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int niter);
-RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP beta_migrationSEXP, SEXP gamma_recombinationSEXP, SEXP niterSEXP) {
+List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_recombination, int samples, int burnin, int thin);
+RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP beta_migrationSEXP, SEXP gamma_recombinationSEXP, SEXP samplesSEXP, SEXP burninSEXP, SEXP thinSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerMatrix >::type isolates(isolatesSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type beta_migration(beta_migrationSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type gamma_recombination(gamma_recombinationSEXP);
-    Rcpp::traits::input_parameter< int >::type niter(niterSEXP);
-    rcpp_result_gen = Rcpp::wrap(island(isolates, beta_migration, gamma_recombination, niter));
+    Rcpp::traits::input_parameter< int >::type samples(samplesSEXP);
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    Rcpp::traits::input_parameter< int >::type thin(thinSEXP);
+    rcpp_result_gen = Rcpp::wrap(island(isolates, beta_migration, gamma_recombination, samples, burnin, thin));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_islandR_log_lik", (DL_FUNC) &_islandR_log_lik, 3},
-    {"_islandR_island", (DL_FUNC) &_islandR_island, 4},
+    {"_islandR_island", (DL_FUNC) &_islandR_island, 6},
     {NULL, NULL, 0}
 };
 

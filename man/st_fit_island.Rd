@@ -4,8 +4,9 @@
 \alias{st_fit_island}
 \title{Fit the sampling distribution of genotypes to sources using the assymmetric island model.}
 \usage{
-st_fit_island(formula, sequences, non_primary = "Human", iters = 10000,
-  priors = list(migration = 1, recombination = 1), data)
+st_fit_island(formula, sequences, non_primary = "Human", samples = 100,
+  burnin = 10, thin = 100, priors = list(migration = 1, recombination =
+  1), data)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}
@@ -15,8 +16,11 @@ st_fit_island(formula, sequences, non_primary = "Human", iters = 10000,
 \item{non_primary}{one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 but P(ST | source) will be computed for these STs in addition to those observed on other sources.}
 
-\item{iters}{the number of iterations to sample. An additional burnin period of 10% of this value will be used, and
-100 samples will be taken (or every sample, whichever is smaller).}
+\item{samples}{the number of samples required from the posterior after burnin. Defaults to 100.}
+
+\item{burnin}{the number of samples to discard for burnin. Defaults to 10.}
+
+\item{thin}{the number of iterations per sample taken. Defaults to 100.}
 
 \item{priors}{- a list of priors for the fit. Defaults to 1,1.}
 
