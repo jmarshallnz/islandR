@@ -27,7 +27,7 @@ st_d = st_fit(formula = Source ~ ST,
             method="dirichlet",
             iters=10000)
 
-st_dl <- lapply(1:1000, function(i) { data.frame(ST=as.numeric(st_d$types), st_d$sampling_distribution[,,i], Iteration=i) })
+st_dl <- lapply(1:10000, function(i) { data.frame(ST=as.numeric(st_d$types), st_d$sampling_distribution[,,i], Iteration=i) })
 st_dd <- do.call(rbind, st_dl)
 
 # Join them up
@@ -41,7 +41,7 @@ st <- bind_rows(cbind(st_id, Model='Island'), cbind(st_dd, Model='Dirichlet')) %
 final <- st %>% group_by(Iteration, Model, ST) %>%
   mutate(P = P/sum(P)) %>% spread(Model, P)
 
-#save(list='final', file='model_compare.Rdata')
+save(list='final', file='model_compare.Rdata')
 #load('model_compare.Rdata')
 
 # OK, now the Kolmogorov-Smirnov statistic
@@ -94,7 +94,7 @@ diff %>% left_join(dist %>%
   data.frame %>% select(ST, D.x, ST2, D.y, Human.x, Source.x, Human.y, Source.y) %>% pull(ST) %>% unique
 
 # try plotting 403...
-plot_dat <- final2 %>% filter(ST %in% c(704, 10027, 403, 2370, 459, 10001, 3799, 3792, 3798,
+plot_dat <- final %>% filter(ST %in% c(704, 10027, 403, 2370, 459, 10001, 3799, 3792, 3798,
                                         7323, 10002, 81, 2343, 2380, 2341, 618, 45, 577, 3728, 393, 3717, 227, 854, 50, 53, 474)) %>% gather(Model, P, Dirichlet, Island)
 
 library(ggplot2)
@@ -104,9 +104,29 @@ ggplot(plot_dat) + geom_boxplot(aes(x=Model, y=P, col=Source)) + facet_wrap(~ST)
 diff %>% left_join(dist %>%
                      mutate(ST = as.numeric(ST), ST2= as.numeric(ST2)), by="ST") %>%
   left_join(manawatu %>% select(ST2=ST, Source) %>% group_by(ST2) %>% summarize(Human=sum(Source=="Human"), Source=sum(Source != "Human")), by="ST2") %>%
-  filter(ST %in% c(704, 403, 2343, 3961, 2026, 474))
+  filter(ST %in% c(403, 2343, 2026, 474, 45))
 
-plot_dat <- final2 %>% filter(ST %in% c(704, 403, 2343, 3961, 2026, 474)) %>%
-  gather(Model, P, Dirichlet, Island) %>% ungroup %>% mutate(ST = as.character(ST))
+sts <- c(45, 2343, 2026, 403, 474)
+plot_dat <- final %>% filter(ST %in% sts) %>%
+  gather(Model, P, Dirichlet, Island) %>% ungroup %>% mutate(ST = factor(ST, levels=sts, labels = paste0("ST-", sts)),
+                                                             Scale = ifelse(Model == "Dirichlet" & ST %in% c("ST-403","ST-2343"), 2, 1.2))
 
-ggplot(plot_dat) + geom_boxplot(aes(x=Model, y=P, col=Source)) + facet_wrap(~ST)
+library(ggjoy)
+library(tikzDevice)
+tikz("genotype_figure.tex", standAlone = TRUE, width=5, height=6)
+#pdf("genotype_figure.pdf", width=5, height=6)
+ggplot(plot_dat) + geom_joy(aes(x=P, y=Source, fill=Model, scale=Scale), alpha=0.7, size=0.1, bandwidth=0.01) +
+  facet_wrap(~ST, ncol=1) +
+  ylab("") +
+  scale_x_continuous(name = "$P(\\mathsf{Source} \\mid \\mathsf{ST})$", limits=c(0,1), expand = c(0,0)) +
+  scale_fill_manual(values = c("steelblue", "brown")) +
+  theme_bw() +
+  theme(legend.position = c(0.87,0.935),
+        legend.box.background = element_rect(),
+        legend.margin = margin(1.5,3,3,3),
+        legend.title = element_blank(),
+        plot.margin = unit(rep(0.5, 4), units = 'cm'))
+dev.off()
+
+#       legend.key.height = unit(30, "points"))
+
