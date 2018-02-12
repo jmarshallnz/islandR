@@ -9,15 +9,15 @@ st_i = replicate(10, {
             data = manawatu,
             method="island",
             sequences = ~ ASP + GLN + GLT + GLY + PGM + TKT + UNC,
-            iters=10000)
-  lapply(1:100, function(i) { data.frame(ST=s$types, s$sampling_distribution[,,i], Iteration=i) })
+            samples = 1000)
+  lapply(1:1000, function(i) { data.frame(ST=s$types, s$sampling_distribution[,,i], Iteration=i) })
   }
   )
 
 # Reformat to a data.frame
 st_il <- apply(st_i, 2, function(x) { do.call(rbind, x) })
 st_il2 <- lapply(seq_along(st_il), function(x) { cbind(st_il[[x]], Chain=x)})
-st_id <- do.call(rbind, st_il2) %>% mutate(Iteration = Iteration + (Chain-1)*100) %>%
+st_id <- do.call(rbind, st_il2) %>% mutate(Iteration = Iteration + (Chain-1)*1000) %>%
   select(-Chain)
 
 # and using the Dirichlet
@@ -25,7 +25,7 @@ st_d = st_fit(formula = Source ~ ST,
             non_primary = "Human",
             data = manawatu,
             method="dirichlet",
-            iters=1000)
+            iters=10000)
 
 st_dl <- lapply(1:1000, function(i) { data.frame(ST=as.numeric(st_d$types), st_d$sampling_distribution[,,i], Iteration=i) })
 st_dd <- do.call(rbind, st_dl)
