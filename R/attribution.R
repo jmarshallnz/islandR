@@ -227,7 +227,8 @@ print.attribution <- function(x, ...) {
   p_pred = list()
   for (j in seq_along(post_theta)) {
     p_pred[[j]] = t(exp(X %*% t(post_theta[[j]])))
-    colnames(p_pred[[j]]) = apply(X, 1, function(x, y) { paste(y[x == 1], collapse=":")}, colnames(X))
+    # TODO: This is a bit icky. We can't rely on this within the functions that use this
+    colnames(p_pred[[j]]) = apply(X, 1, function(x, y) { paste(paste0(y, '=', x), collapse=":")}, colnames(X))
   }
   p_pred[[length(p_pred)+1]] = matrix(1, nrow(p_pred[[1]]), ncol(p_pred[[1]]))
 
