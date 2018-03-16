@@ -27,7 +27,7 @@
 
 \begin{document}
 \runninghead{Extending statistical models for the source attribution of zoonotic diseases}
-\title{Extending statistical models for source attribution of zoonotic diseases: A study of campylobacteriosis} 
+\title{Extending statistical models for source attribution of zoonotic diseases: A study of campylobacteriosis}
 \author{Sih-Jing Liao\affil{a},
 Jonathan Marshall\affil{a}\corrauth\ \footnotemark[2], Martin L. Hazelton\affil{a} and Nigel P. French\affil{b}}
 \address{\affilnum{a} Institute of Fundamental Sciences-Statistics, Massey University, Palmerston North, New Zealand\\
@@ -44,9 +44,9 @@ Preventing and controlling zoonoses through the design and implementation of pub
 \maketitle
 
 \section{Introduction}
-Modeling of disease surveillance data to explore patterns of infectious diseases has had a long history in public health. Infectious diseases can cause high economic and medical costs due to morbidity and mortality. In recent decades, the annual number of global deaths caused by infections has leveled off at approximate 15 million and may remain at this level for the next three decades \cite{DyeC, WHOM}. In order for such an enormous health burden to be reduced, preventing and controlling infectious diseases becomes extraordinarily important, which depends on how much we know about the nature of disease transmission. For zoonotic diseases, where transmission to humans from animal reservoirs may be via food, water, through environmental contamination or via direct contact with animals, knowledge of the potential sources and pathways of infection is key to reducing the burden of disease. Quantifying the burden of illness attributable to each pathway and source provides valuable information to health professionals making decisions on public health policy for disease control. 
+Modeling of disease surveillance data to explore patterns of infectious diseases has had a long history in public health. Infectious diseases can cause high economic and medical costs due to morbidity and mortality. In recent decades, the annual number of global deaths caused by infections has leveled off at approximate 15 million and may remain at this level for the next three decades \cite{DyeC, WHOM}. In order for such an enormous health burden to be reduced, preventing and controlling infectious diseases becomes extraordinarily important, which depends on how much we know about the nature of disease transmission. For zoonotic diseases, where transmission to humans from animal reservoirs may be via food, water, through environmental contamination or via direct contact with animals, knowledge of the potential sources and pathways of infection is key to reducing the burden of disease. Quantifying the burden of illness attributable to each pathway and source provides valuable information to health professionals making decisions on public health policy for disease control.
 
-Over the last few decades there have been many models developed for the analysis of zoonotic diseases. Epidemiological models make use of the incidence of cases and geographic data to capture the main characteristics of disease spread. For example, the Susceptible-Infectious-Recovered model \cite{Kerm} classifies populations into a susceptible, infective and recovered status enabling an estimation of the number of individuals who are likely to be infected. Also, models with a combination of spatial and temporal data enable the prediction of the time frame and areas where a disease outbreak is likely to occur \cite{HeldL, Hoehl, Simo}. However zoonotic transmission from animals to humans may be complex, involving many sources and exposures linked by differing pathways. For instance, infected wild birds may contaminate environmental water and cause disease spread to water users, either humans or other animals \cite{Wagen}. Tracing the source of infection is thus crucial to increasing the ability to implement risk management and intervention \cite{Wilso, Morel}. In terms of statistical analysis, modeling zoonoses requires an advanced approach with the focus changed from just epidemiology to a combination of epidemiology, evolutionary genetics and biology \cite{Muell}. Hence, some source attribution models have been proposed to estimate the number of cases attributable to different sources by utilizing epidemiological information and the association with genotypes found in humans and sources \cite{vanP, Hald, MullA}. 
+Over the last few decades there have been many models developed for the analysis of zoonotic diseases. Epidemiological models make use of the incidence of cases and geographic data to capture the main characteristics of disease spread. For example, the Susceptible-Infectious-Recovered model \cite{Kerm} classifies populations into a susceptible, infective and recovered status enabling an estimation of the number of individuals who are likely to be infected. Also, models with a combination of spatial and temporal data enable the prediction of the time frame and areas where a disease outbreak is likely to occur \cite{HeldL, Hoehl, Simo}. However zoonotic transmission from animals to humans may be complex, involving many sources and exposures linked by differing pathways. For instance, infected wild birds may contaminate environmental water and cause disease spread to water users, either humans or other animals \cite{Wagen}. Tracing the source of infection is thus crucial to increasing the ability to implement risk management and intervention \cite{Wilso, Morel}. In terms of statistical analysis, modeling zoonoses requires an advanced approach with the focus changed from just epidemiology to a combination of epidemiology, evolutionary genetics and biology \cite{Muell}. Hence, some source attribution models have been proposed to estimate the number of cases attributable to different sources by utilizing epidemiological information and the association with genotypes found in humans and sources \cite{vanP, Hald, MullA}.
 
 \begin{table}
   \begin{center}
@@ -97,7 +97,7 @@ where $x_{ij}$ can be $0$, indicating STs are yet observed on the sources; $n_j=
 \end{align}
 Then the posterior for $\boldsymbol{\pi}_{j}$ takes the form of a Dirichlet probability function with parameters $(\boldsymbol{\alpha}_{j}+\boldsymbol{x}_{j}-\boldsymbol{1})$,
 \begin{align}
-        p(\boldsymbol{\pi}_{j} \vert \boldsymbol{x}_{j} ) & \propto L(\boldsymbol{\pi}_{j} ; \boldsymbol{x}_{j}) p(\boldsymbol{\pi}_{j}) \notag \\ 
+        p(\boldsymbol{\pi}_{j} \vert \boldsymbol{x}_{j} ) & \propto L(\boldsymbol{\pi}_{j} ; \boldsymbol{x}_{j}) p(\boldsymbol{\pi}_{j}) \notag \\
        & \propto \prod_{i=1}^{I}\pi_{ij}^{\alpha_{ij} + x_{ij}-1}, \quad \alpha_{ij} >0. \notag
  \end{align}
 To express the belief that every isolate is equally likely \emph{apriori}, the parameter of the Dirichlet prior is assumed as $\boldsymbol{\alpha}_{j}=\boldsymbol{1}$. Therefore, $p(\text{ST}_h \vert \text{source }j)$, $\boldsymbol{X}$) can be obtained by simulating from the Dirichlet posterior.
@@ -143,7 +143,7 @@ The data also contain two location variables: one is binary, the other is catego
         \bottomrule
       \end{tabular}
       \caption{Each category of rurality is defined along with the respective number of human cases typed during 2005 and 2014, and the population size in 2006 and 2013, in the Manawatu region of New Zealand.}
-      \label{tab2}     
+      \label{tab2}
 \end{table}
 
 
@@ -158,7 +158,7 @@ The data also contain two location variables: one is binary, the other is catego
 
 \subsection{Incorporating covariates}
 
-Previously we described how to estimate the marginal probabilities that a randomly selected human case is due to a given source. To extend this analysis so as to include individual level covariates, we need to calculate subject-specific attribution (conditional) probabilities. To that end, let $F_{jh}$ denote the attribution probability of source $j$ for the $h^\textrm{th}$ human case, with constraints $\sum_{j=1}^J F_j =1$ and $0 \leq F_j \leq 1$, where $j=1, \ldots, J$. We model the probabilities $F_{jh}$ using a linear model on the logit scale, that is,  
+Previously we described how to estimate the marginal probabilities that a randomly selected human case is due to a given source. To extend this analysis so as to include individual level covariates, we need to calculate subject-specific attribution (conditional) probabilities. To that end, let $F_{jh}$ denote the attribution probability of source $j$ for the $h^\textrm{th}$ human case, with constraints $\sum_{j=1}^J F_j =1$ and $0 \leq F_j \leq 1$, where $j=1, \ldots, J$. We model the probabilities $F_{jh}$ using a linear model on the logit scale, that is,
 \begin{align}
   F_{jh}  = \frac{\exp (f_{jh})}{\sum_{j=1}^4 \exp(f_{jh})},
   \label{capF}
@@ -183,7 +183,7 @@ where
 \begin{equation*}
 z_{dh} =
 \left\{\begin{array}{rcl}
-1 && \mbox{if case $h$ is in the category $d$,} \notag \\ 0 && \mbox{otherwise}. 
+1 && \mbox{if case $h$ is in the category $d$,} \notag \\ 0 && \mbox{otherwise}.
 \end{array}\right.
 \end{equation*}
 As a consequence, the estimated attribution probabilities are obtained via equation~\eqref{capF} after fitting the data to model~\eqref{modL} or to model~\eqref{modC}.
@@ -203,7 +203,7 @@ In the interest of quantifying the uncertainty of the posterior attribution prob
 
 \item Compute the acceptance probability $\alpha$, a product of the likelihood ratio, the proposal ratio and the prior ratio, given by
 \begin{align*}
-\alpha=\frac{L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)}{L\Big(F; \text{ST}, \boldsymbol{Z}\Big)}\frac{Q\Big(\theta_{(t)} \vert \theta_{(t)}^*\Big)}{Q\Big(\theta_{(t)}^* \vert \theta_{(t)}\Big)}\frac{p\Big(\theta_{(t)}^*\Big)}{p\Big(\theta_{(t)}\Big)}, 
+\alpha=\frac{L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)}{L\Big(F; \text{ST}, \boldsymbol{Z}\Big)}\frac{Q\Big(\theta_{(t)} \vert \theta_{(t)}^*\Big)}{Q\Big(\theta_{(t)}^* \vert \theta_{(t)}\Big)}\frac{p\Big(\theta_{(t)}^*\Big)}{p\Big(\theta_{(t)}\Big)},
 \end{align*}
 where the likelihood $L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)$ involves the rurality covariate $\boldsymbol{Z}$ resulting from the attribution probability, $p(\text{source }j\vert \boldsymbol{Z}$) with an assumption that the genotype distribution on sources is independent of the covariate.
 \item Sample $u$ from $U(0,1)$. If $\alpha$ meets $u < \min \left\{1, \alpha \right\}$, in the next state the current proposals of $f^{(*)}$, $F^{(*)}$ and $L\Big(F^{(*)}; \text{ST}, \boldsymbol{Z}\Big)$ are updated; otherwise, the previous proposals are retained.
@@ -216,25 +216,25 @@ where the likelihood $L\Big(F^*; \text{ST}, \boldsymbol{Z}\Big)$ involves the ru
 
 \begin{figure}
 \centering
-\includegraphics[width=.9\linewidth]{Figures/FCILandC(5)}
-\caption{Posterior mean attribution probabilities ($F$) with 80\% credible intervals for source: poultry (red), ruminants (green), water (blue) and others (pink) over the rurality scales from highly rural area to main urban area. The samples of attribution probability are generated from the two respective fitted models: the linear model (upper panel) and the categorical model (lower panel), given the sampling distribution of genotypes with evolutionary information (the asymmetric Island model) or without any genetic information (the Dirichlet model).}
+\includegraphics[width=.9\linewidth]{Figures/attr_all.pdf}
+\caption{Posterior mean attribution ($F$) of human cases with 80\% credible intervals for source: poultry (red), ruminants (blue), water (green) and others (purple) over the rurality scales from highly rural area to main urban areas. The attribution is generated from both the linear and the categorical models, given the sampling distribution of genotypes with evolutionary information (the asymmetric Island model) or without any genetic information (the Dirichlet model).}
 \label{fig2}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=.9\linewidth]{Figures/FCILandC(8)}
-\caption{Posterior mean attribution probabilities ($F$) with 80\% credible interval for four sources over seven rurality categories after applying our methods to data with the post-intervention time period from 2008 to 2014. The samples of attribution probability are generated from the two respective fitted models -- the linear model (upper panel) and the categorical model (lower panel) -- given the genotype distribution based upon the asymmetric Island model or the Dirichlet model.}
+\includegraphics[width=.9\linewidth]{Figures/attr_2009.pdf}
+\caption{Posterior mean attribution ($F$) of human cases from the post-intervention time period (2008-2014) with 80\% credible intervals for the four sources over the rurality scales from highly rural area to main urban area. The attribution is generated from both the linear and the categorical models, given the sampling distribution of genotypes with evolutionary information (the asymmetric Island model) or without any genetic information (the Dirichlet model).}
 \label{fig3}
 \end{figure}
 
-To investigate the association between source attribution and human infection, we apply the methods demonstrated in the preceding sections to the campylobacteriosis data and also rearrange the data frame from the ST-based structure to the case-based one for model fitting. The posterior mean of samples $F$ with the 80\% highest posterior density (HPD) interval for each source is illustrated on each rurality grade in Figure~(\ref{fig2}). Given different genotype distributions, the upper panel of the figure is based on the linear model, whereas the lower panel is generated from the categorical model.
+To investigate the association between source attribution and human infection, we apply the methods demonstrated in the preceding sections to the campylobacteriosis data from the Manawatu in New Zealand. The posterior mean of samples $F$ with the 80\% highest posterior density (HPD) interval for each source is illustrated on each rurality grade in Figure~(\ref{fig2}). Given different genotype distributions, the upper panel of the figure is based on the linear model, whereas the lower panel is generated from the categorical model.
 
 For the linear model, the simple model estimates 75\% and 32\% of cases dwelling in main urban areas have acquired the infection from poultry and ruminants, respectively, whereas the asymmetric Island model provides less than 70\% and approximately 30\% of cases attributable to the respective source. Further, the 80\% HPD interval of $F$ for poultry and for ruminants based on the simple model seems marginally wider than that for the asymmetric Island model. So, there is no significant difference in the proportion of human cases attributed to each source between the asymmetric Island and the simple models. For the categorical model, the comparison between the asymmetric Island and the simple models is quite similar to that for the linear model except for the distinguishable attribution for poultry and ruminants in highly rural areas and the much wider credible intervals of $F$ for four sources. For the two fitted models, the narrower credible intervals noticed in very rural areas from the asymmetric Island model might indicate that the asymmetric Island model gives a little more accurate sampling distribution for poultry and ruminants genotypes especially typed in humans living in rural areas. Further, the relatively larger credible intervals observed in the categorical model might be the effect of allocating the number of cases to each qualitative scale (as a dummy variable), particularly in rural areas due to small observations.
 
 Figure~(\ref{fig2}) shows that poultry starts becoming the dominant source contributable to the infection between rural areas with moderate and with high urban influence. In contrast, ruminants are becoming the most attributable source when locations are getting farther away from rural areas with a moderate urban influence. As to water and other sources, they seem to be less influenced by the rurality levels because the probabilities remain less than 0.2 over the seven categories.
 
-Moreover, with a view to examining the robustness of our results, the approach is also applied to data with the time period of post-intervention from 2008 to 2014. The source attribution at different rurality levels is then illustrated in Figure~(\ref{fig3}), displaying that the overall attribution over four sources is moderately consistent with the patterns we previously discovered. However, Figure~(\ref{fig3}) shows a marked decline of attribution probability for poultry and a small rise in probability for ruminants in main urban areas. Despite the fact that the intervention did not eliminate the infection arising from poultry \cite{MuelM}, the reduction highlights the significant improvement in contribution of poultry to the disease, particularly in urban areas where most cases lived. 
+Moreover, with a view to examining the robustness of our results, the approach is also applied to data with the time period of post-intervention from 2008 to 2014. The source attribution at different rurality levels is then illustrated in Figure~(\ref{fig3}), displaying that the overall attribution over four sources is moderately consistent with the patterns we previously discovered. However, Figure~(\ref{fig3}) shows a marked decline of attribution probability for poultry and a small rise in probability for ruminants in main urban areas. Despite the fact that the intervention did not eliminate the infection arising from poultry \cite{MuelM}, the reduction highlights the significant improvement in contribution of poultry to the disease, particularly in urban areas where most cases lived.
 
 Lastly, we use deviance information criterion (DIC) for model comparison. DIC values obtained from our MCMC runs are displayed in Table~\ref{tab3}. Overall there is a clear signal that a linear representation of rurality (on the logit scale) is adequate. Note that the asymmetric Island and Dirichlet models are not directly comparable by DIC as the likelihoods are on different scales: the Dirichlet model assumes all potential sequence types have been observed so that $\sum_j p(\boldsymbol{\pi}_j) = 1$, whereas the asymmetric Island model allows for unobserved sequence types so that $\sum_j p(\boldsymbol{\pi}_j) < 1$.
 
