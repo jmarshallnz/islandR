@@ -42,7 +42,7 @@ final <- st %>% group_by(Iteration, Model, ST) %>%
   mutate(P = P/sum(P)) %>% spread(Model, P)
 
 save(list='final', file='model_compare.Rdata')
-#load('model_compare.Rdata')
+load('model_compare.Rdata')
 
 # OK, now the Kolmogorov-Smirnov statistic
 kolm_smirn <- function(x, y) {
@@ -106,26 +106,29 @@ diff %>% left_join(dist %>%
   left_join(manawatu %>% select(ST2=ST, Source) %>% group_by(ST2) %>% summarize(Human=sum(Source=="Human"), Source=sum(Source != "Human")), by="ST2") %>%
   filter(ST %in% c(403, 2343, 2026, 474, 45))
 
-sts <- c(45, 2343, 2026, 403, 474)
+sts <- c(403, 2343, 2026, 474)
 plot_dat <- final %>% filter(ST %in% sts) %>%
   gather(Model, P, Dirichlet, Island) %>% ungroup %>% mutate(ST = factor(ST, levels=sts, labels = paste0("ST-", sts)),
                                                              Scale = ifelse(Model == "Dirichlet" & ST %in% c("ST-403","ST-2343"), 2, 1.2))
 
 library(ggjoy)
-library(tikzDevice)
-tikz("genotype_figure.tex", standAlone = TRUE, width=5, height=6)
-#pdf("genotype_figure.pdf", width=5, height=6)
+#library(tikzDevice)
+#tikz("genotype_figure.tex", standAlone = TRUE, width=5, height=6)
+cairo_pdf("genotype_figure.pdf", width=7, height=4)
 ggplot(plot_dat) + geom_joy(aes(x=P, y=Source, fill=Model, scale=Scale), alpha=0.7, size=0.1, bandwidth=0.01) +
-  facet_wrap(~ST, ncol=1) +
+  facet_wrap(~ST, ncol=2) +
   ylab("") +
-  scale_x_continuous(name = "$P(\\mathsf{Source} \\mid \\mathsf{ST})$", limits=c(0,1), expand = c(0,0)) +
+  scale_x_continuous(name = "P(Source | ST)", limits=c(0,1), expand = c(0,0)) +
   scale_fill_manual(values = c("steelblue", "brown")) +
   theme_bw() +
-  theme(legend.position = c(0.87,0.935),
+  theme(text = element_text(family="Times"),
+        legend.position = c(0.92,0.895),
         legend.box.background = element_rect(),
         legend.margin = margin(1.5,3,3,3),
         legend.title = element_blank(),
-        plot.margin = unit(rep(0.5, 4), units = 'cm'))
+        axis.text.x = element_text(hjust=c(-0.1,rep(0.5, 3), 1.1)))
+#        legend.background = element_rect(fill='transparent'))
+#        plot.margin = unit(rep(0.5, 4), units = 'cm'))
 dev.off()
 
 #       legend.key.height = unit(30, "points"))
