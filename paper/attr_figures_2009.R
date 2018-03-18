@@ -63,21 +63,21 @@ plot_df <- df %>%
 # plot
 library(ggplot2)
 
-cairo_pdf("attr_2009.pdf", width=7, height=7)
+cairo_pdf("attr_2009.pdf", width=7, height=5)
 ggplot(plot_df) +
   geom_ribbon(aes(x=UR_num, ymin=li, ymax=ui, fill=Source), alpha=0.3) +
   geom_line(aes(x=UR_num, y=m, col=Source), lwd=1) +
   facet_grid(GenotypeModel~AttributionModel) +
   scale_x_continuous(name=NULL, breaks=c(-3,3), labels=c("Highly rural", "Highly Urban"), expand=c(0,0)) +
   scale_y_continuous(name="Percentage of cases", labels=scales::percent_format(), limits=c(0,1), expand=c(0,0)) +
-  scale_color_manual(values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
-  scale_fill_manual(values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
+  scale_color_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
+  scale_fill_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
   theme_bw() +
   theme(text = element_text(family="Times"),
-        legend.position = c(0.98,0.90),
+        legend.position = c(0.99,0.89),
         legend.justification = "right",
         legend.margin=margin(0,0,0,0),
         legend.background = element_rect(fill = 'transparent'),
-        axis.text.x = element_text(hjust=c(-0.1,1.1)))
+        axis.text.x = element_text(hjust=c(-0.1,1.1)),
+        axis.text.y = element_text(vjust=c(-0.1,rep(0.5, 3), 1.1)))
 dev.off()
-
