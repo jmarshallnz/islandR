@@ -15,9 +15,9 @@
   \item{TKT}{The TKT housekeeping gene}
   \item{UNC}{The UNC housekeeping gene}
   \item{Source}{The source (Human, Poultry, Ruminants, Water, Other)}
-  \item{Location}{A factor containing Urban or Rural for each Human case}
-  \item{Intervention}{A factor containing before or after for each Human case, specifying whether
-  it occurred before or after the 2007-2008 intervention in the Poultry industry}
+  \item{Year}{The year the sample was collected}
+  \item{UR2006_num}{A numeric code containing the level of Rurality for each Human case}
+  \item{UR2006_name}{The corresponding name of the numeric identifier `UR2006_num` for each Human case}
 }}
 \usage{
 manawatu

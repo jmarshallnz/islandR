@@ -42,8 +42,10 @@ st = st_fit(formula = Source ~ ST,
 # see some summaries of these
 summary(st)
 
-# Fit the attribution model for human cases, estimating separately by location
-mod = attribution(ST ~ Location, st, data=subset(manawatu, Source == "Human"))
+# Fit the attribution model for human cases, estimating separately by location (urban/rural)
+dat = subset(manawatu, Source == "Human")
+dat$Location = factor(ifelse(dat$UR2006_num <= 0, "Rural", "Urban"))
+mod = attribution(ST ~ Location, st, data=dat)
 
 # Various model summaries
 summary(mod)
@@ -65,8 +67,8 @@ library(ggplot2)
 posterior <- predict(mod, FUN=identity)
 
 df <- posterior %>% mutate(Location = fct_recode(X,
-                                        Urban = '(Intercept):LocationUrban',
-                                        Rural = '(Intercept)'))
+                                        Urban = '(Intercept)=1:LocationUrban=1',
+                                        Rural = '(Intercept)=1:LocationUrban=0'))
 
 ggplot(df) +
   geom_violin(aes(x=Source, y=p, fill=Source), scale="width") +
