@@ -20,11 +20,11 @@ rdirichlet<-function(n,a)
 #' @param prior   The Dirichlet prior. Currently only a constant. Defaults to 1.
 #' @param non_primary one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 #'        but P(ST | source) will be computed for these STs in addition to those observed on other sources.
-#' @param iters the number of iterations to sample.
+#' @param samples the number of iterations to sample. Defaults to 100.
 #' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class dirichlet which derives from sampling_dist.
 #' @seealso \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
-st_fit_dirichlet <- function(formula, prior = 1, non_primary = "Human", iters = 100, data) {
+st_fit_dirichlet <- function(formula, prior = 1, non_primary = "Human", samples = 100, data) {
   mod.terms = terms(formula, data=data)
   mod.frame = model.frame(formula, data=data)
 
@@ -59,7 +59,7 @@ st_fit_dirichlet <- function(formula, prior = 1, non_primary = "Human", iters = 
     a
   }
 
-  out <- replicate(iters, dirichlet_matrix(alpha))
+  out <- replicate(samples, dirichlet_matrix(alpha))
   # righto, now construct a useful object...
   x = list(types = rownames(counts), sources = source_names,
            sampling_distribution = out, model = "dirichlet")

@@ -4,7 +4,7 @@
 \alias{st_fit_dirichlet}
 \title{Fit the sampling distribution of genotypes to sources using a Dirichlet/multinomial distribution.}
 \usage{
-st_fit_dirichlet(formula, prior = 1, non_primary = "Human", iters = 100,
+st_fit_dirichlet(formula, prior = 1, non_primary = "Human", samples = 100,
   data)
 }
 \arguments{
@@ -15,7 +15,7 @@ st_fit_dirichlet(formula, prior = 1, non_primary = "Human", iters = 100,
 \item{non_primary}{one or more sources that should be considered 'output' sources. No genotype distribution is computed for these,
 but P(ST | source) will be computed for these STs in addition to those observed on other sources.}
 
-\item{iters}{the number of iterations to sample.}
+\item{samples}{the number of iterations to sample. Defaults to 100.}
 
 \item{data}{optional data frame from which to take variables in \code{formula} and \code{sequence}.}
 }
