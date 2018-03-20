@@ -65,14 +65,15 @@ plot_df <- df %>%
 library(ggplot2)
 
 cairo_pdf("attr_intervention.pdf", width=7, height=5)
+#pdf("attr_intervention.pdf", width=7, height=5, colormodel = 'gray')
 ggplot(plot_df) +
   geom_ribbon(aes(x=UR_num, ymin=li, ymax=ui, fill=Source), alpha=0.3) +
   geom_line(aes(x=UR_num, y=m, col=Source), lwd=1) +
   facet_grid(GenotypeModel~Intervention) +
-  scale_x_continuous(name=NULL, breaks=c(-3,3), labels=c("Highly rural", "Highly Urban"), expand=c(0,0)) +
+  scale_x_continuous(name=NULL, breaks=c(-3,3), labels=c("Rural", "Urban"), expand=c(0,0)) +
   scale_y_continuous(name="Percentage of cases", labels=scales::percent_format(), limits=c(0,1), expand=c(0,0)) +
-  scale_color_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
-  scale_fill_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue", Other="plum4", Water="green4")) +
+  scale_color_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue2", Other="plum4", Water="green4")) +
+  scale_fill_manual(name=NULL, values = c(Poultry="brown", Ruminants="steelblue2", Other="plum4", Water="green4")) +
   theme_bw() +
   theme(text = element_text(family="Times"),
         legend.position = c(0.99,0.89),
