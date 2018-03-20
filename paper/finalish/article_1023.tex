@@ -1,47 +1,54 @@
-\documentclass[times, doublespace]{simauth}%For paper submission
-%\documentclass[times]{simauth}
-% Packages
-\usepackage{mdframed}
-\usepackage{subcaption}
-\usepackage{subfig}
-\usepackage{url}
-\usepackage{color}
-%\usepackage[T1]{fontenc}
-%\usepackage{times}
-%\usepackage{bm}
-%\usepackage{mathtime}
+\RequirePackage{etex}
+\documentclass[AMA,STIX1COL]{WileyNJD-v2}
 
-% Customised Commands
-\newtheorem{theorem}{Theorem}[section]
-\newtheorem{corollary}{Corollary}[theorem]
-\newtheorem{lemma}[theorem]{Lemma}
-\newenvironment{proof}[1][Proof]{\begin{trivlist}
-\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
-\newcommand{\qed}{\nobreak \ifvmode \relax \else
-      \ifdim\lastskip<1.5em \hskip-\lastskip
-      \hskip1.5em plus0em minus0.5em \fi \nobreak
-      \vrule height0.75em width0.5em depth0.25em\fi}
+\articletype{Research Article}%
 
-% Bibliographystyle
-\bibliographystyle{wileyj}
+\received{26 April 2016}
+\revised{6 June 2016}
+\accepted{6 June 2016}
+
+\raggedbottom
 
 \begin{document}
-\runninghead{Extending statistical models for the source attribution of zoonotic diseases}
+
 \title{Extending statistical models for source attribution of zoonotic diseases: A study of campylobacteriosis}
-\author{Sih-Jing Liao\affil{a},
-Jonathan Marshall\affil{a}\corrauth\footnotemark[2], Martin L. Hazelton\affil{a} and Nigel P. French\affil{b}}
-\address{\affilnum{a} Institute of Fundamental Sciences-Statistics, Massey University, Palmerston North, New Zealand\\
-\affilnum{b} mEpiLab, Hopkirk Research Institute, Massey University, Palmerston North, New Zealand}
-\corraddr{Jonathan Marshall, Institute of Fundamental Sciences-Statistics, Massey University, Private Bag 11222, Palmerston North, New Zealand\\ \footnotemark[2] E-mail: J.C.marshall@massey.ac.nz}
 
-\begin{abstract}
+\author[1]{Sih-Jing Liao}
 
-Preventing and controlling zoonoses through the design and implementation of public health policies requires a thorough understanding of transmission pathways. Modeling jointly the epidemiological data and genetic information of microbial isolates derived from cases provides a methodology for tracing back the source of infection. In this paper, the attribution probability for human cases of campylobacteriosis for each source, conditional on the extent to which each case resides in a rural compared to urban environment, is estimated. A model that incorporates genetic data and evolutionary processes is applied alongside a newly developed genetic-free model. We show that inference from each model is comparable except for rare microbial genotypes, and that the effect of ``rurality'' may be modeled linearly on the logit scale, with increasing rurality leading to increasing likelihood of ruminant-sourced campylobacteriosis.
+\author[1]{Jonathan Marshall*}
 
-\end{abstract}
+\author[1]{Martin L. Hazelton}
+
+\author[2]{Nigel P. French}
+
+\authormark{Sih-Jing Liao \textsc{et al}}
+
+
+\address[1]{\orgdiv{Institute of Fundamental Sciences},\orgname{Massey University}, \orgaddress{\state{Palmerston North}, \country{New Zealand}}}
+
+\address[2]{\orgdiv{mEpiLab, Hopkirk Research Institute}, \orgname{Massey University}, \orgaddress{\state{Palmerston North}, \country{New Zealand}}}
+
+\address[3]{\orgdiv{Org Division}, \orgname{Org Name}, \orgaddress{\state{State name}, \country{Country name}}}
+
+\corres{*J Marshall, Institute of Fundamental Sciences, Massey University, Palmerston North, New Zealand. \email{J.C.marshall@massey.ac.nz}}
+
+%\presentaddress{This is sample for present address text this is sample for present address text}
+
+\abstract[Summary]{Preventing and controlling zoonoses through the design and implementation of public health policies requires a thorough understanding of transmission pathways. Modeling jointly the epidemiological data and genetic information of microbial isolates derived from cases provides a methodology for tracing back the source of infection. In this paper, the attribution probability for human cases of campylobacteriosis for each source, conditional on the extent to which each case resides in a rural compared to urban environment, is estimated. A model that incorporates genetic data and evolutionary processes is applied alongside a newly developed genetic-free model. We show that inference from each model is comparable except for rare microbial genotypes, and that the effect of ``rurality'' may be modeled linearly on the logit scale, with increasing rurality leading to increasing likelihood of ruminant-sourced campylobacteriosis.}
 
 \keywords{source attribution; \textit{Campylobacter}; genetic model; Dirichlet prior; HPD interval; DIC}
+
+\jnlcitation{\cname{%
+\author{S.J. Liao}, 
+\author{J. Marshall}, 
+\author{M.L. Hazelton}, and 
+\author{N.P. French}
+\author{T. Woollings}} (\cyear{2018}), 
+\ctitle{Extending statistical models for source attribution of zoonotic diseases: A study of campylobacteriosis}, \cjournal{Statistics In Medicine}.} %, \cvol{2018;00:1--6}.}
+
 \maketitle
+
+%\footnotetext{\textbf{Abbreviations:} ANA, anti-nuclear antibodies; APC, antigen-presenting cells; IRF, interferon regulatory factor}
 
 \section{Introduction}
 Modeling of disease surveillance data to explore patterns of infectious diseases has had a long history in public health. Infectious diseases can cause high economic and medical costs due to morbidity and mortality. In recent decades, the annual number of global deaths caused by infections has leveled off at approximate 15 million and may remain at this level for the next three decades \cite{DyeC, WHOM}. In order for such an enormous health burden to be reduced, preventing and controlling infectious diseases becomes extraordinarily important, and our ability to intervene depends on how much we know about the nature of disease transmission. For zoonotic diseases, where transmission to humans from animal reservoirs may be via food, water, through environmental contamination or direct contact with animals, knowledge of the potential sources and pathways of infection is key to reducing the burden of disease. Quantifying the burden of illness attributable to each pathway and source provides valuable information to health professionals making decisions on public health policy for disease control.
