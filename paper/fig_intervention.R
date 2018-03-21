@@ -7,7 +7,7 @@ library(ggplot2)
 dataset <- manawatu %>% filter(Source != "Human" | !is.na(UR2006_num)) %>%
   mutate(Intervention = ifelse(Year < 2008, "Before", "After"))
 
-num_samples = 10
+num_samples = 100
 
 # Fit the sequence type distribution using the island model
 st_i = st_fit(formula = Source ~ ST,

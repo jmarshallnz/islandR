@@ -111,7 +111,7 @@ Then the posterior for $\boldsymbol{\pi}_{j}$ takes the form of a Dirichlet prob
  \end{align}
 To express the belief that every isolate is equally likely \emph{apriori}, the parameter of the Dirichlet prior is assumed as $\boldsymbol{\alpha}_{j}=\boldsymbol{1}$. Therefore, $p(\text{ST}_h \vert \text{source }j)$ can be obtained by simulating from the Dirichlet posterior.
 
-Lastly, to estimate the attribution probability, 500 samples of $p(\text{ST}_h \vert \text{source }j)$ are generated using the asymmetric Island or simple models. For each posterior sample, we infer $p(\text{source }j)$ using the likelihood~\eqref{Olikh}. This has the effect of integrating over the uncertainty in $p(\text{ST}_h \vert \text{source }j)$ when estimating $p(\text{source }j)$.
+Lastly, to estimate the attribution probability, 100 samples of $p(\text{ST}_h \vert \text{source }j)$ are generated using the asymmetric Island or simple models. For each posterior sample, we infer $p(\text{source }j)$ using the likelihood~\eqref{Olikh}. This has the effect of integrating over the uncertainty in $p(\text{ST}_h \vert \text{source }j)$ when estimating $p(\text{source }j)$.
 
 \subsection{Campylobacteriosis data}
 
@@ -198,7 +198,7 @@ z_{dh} =
 As a consequence, the estimated attribution probabilities are obtained via equation~\eqref{capF} after fitting the data to model~\eqref{modL} or to model~\eqref{modC}.
 
 \subsection{MCMC algorithm}
-In the interest of quantifying the uncertainty of the posterior attribution probability, we perform Bayesian inference for source attribution probabilities using Markov chain Monte Carlo (MCMC) methods. Assume the priors on parameters of interest in model~\eqref{modL} and model~\eqref{modC} follow a standard normal distribution. Let $\boldsymbol{\theta}$ denote the vector of parameters, with elements $\theta_{t}$ for $t=1, \ldots, T$. For example, $\boldsymbol{\theta}=\{\alpha_1, \alpha_2, \alpha_3, \beta_1, \beta_2, \beta_3\}$ in model~\eqref{modL} or $\boldsymbol{\theta}=\{\beta_{11}, \beta_{12}, \ldots, \beta_{dj}, \ldots, \beta_{73}\}$ in model~\eqref{modC}. We use the Metropolis-Hastings algorithm to update $\theta_{(t)}$ and hence $f_{jh}$ and $ F_{jh}$, in a Markov chain with a length of 30,000 iterations. The first 5,000 samples are removed as the burn-in period (during which time the chain converges) and the sequence is thinned every 10$^{th}$ sample to reduce computer storage. Here are the steps in detail:
+In the interest of quantifying the uncertainty of the posterior attribution probability, we perform Bayesian inference for source attribution probabilities using Markov chain Monte Carlo (MCMC) methods. Assume the priors on parameters of interest in model~\eqref{modL} and model~\eqref{modC} follow a standard normal distribution. Let $\boldsymbol{\theta}$ denote the vector of parameters, with elements $\theta_{t}$ for $t=1, \ldots, T$. For example, $\boldsymbol{\theta}=\{\alpha_1, \alpha_2, \alpha_3, \beta_1, \beta_2, \beta_3\}$ in model~\eqref{modL} or $\boldsymbol{\theta}=\{\beta_{11}, \beta_{12}, \ldots, \beta_{dj}, \ldots, \beta_{73}\}$ in model~\eqref{modC}. We use the Metropolis-Hastings algorithm to update $\theta_{(t)}$ and hence $f_{jh}$ and $ F_{jh}$, in a Markov chain with a length of 11,000 iterations. The first 1,000 samples are removed as the burn-in period (during which time the chain converges) and the sequence is thinned every 100$^{th}$ sample to reduce computer storage. Here are the steps in detail:
 
 \begin{enumerate}
 \setcounter{enumi}{-1}
