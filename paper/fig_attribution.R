@@ -55,7 +55,7 @@ plot_df <- df %>%
   mutate(Source = factor(Source, levels=rev(c("Other", "Water", "Ruminants", "Poultry"))))
 
 # plot
-pdf("fit_attribution.pdf", width=7, height=5)
+pdf("fig_attribution.pdf", width=7, height=5)
 ggplot(plot_df) +
   geom_ribbon(aes(x=UR2006_num, ymin=li, ymax=ui, fill=Source), alpha=0.3) +
   geom_line(aes(x=UR2006_num, y=m, col=Source), lwd=1) +
