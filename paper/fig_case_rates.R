@@ -1,4 +1,4 @@
-library(meshblocknz)
+library(meshblocknz) # from https://github.com/jmarshallnz/meshblocknz
 library(dplyr)
 library(tidyr)
 library(islandR)
