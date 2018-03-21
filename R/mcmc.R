@@ -415,8 +415,9 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
     }
     if (i > burnin && i %% thinning == 0) {
       post_i = post_i + 1;
-      posterior[[post_i]] = list(p     = curr$p,
-                                 theta = curr$theta)
+      posterior[[post_i]] = list(p      = curr$p,
+                                 theta  = curr$theta,
+                                 loglik = sum(curr$log_likelihood))
     }
   }
 
@@ -492,10 +493,11 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
     }
     if (i > burnin && i %% thinning == 0) {
       post_i = post_i + 1;
-      posterior[[post_i]] = list(p     = curr$p,
-                                 theta = curr$theta,
-                                 tau   = curr$tau,
-                                 rho   = curr$rho)
+      posterior[[post_i]] = list(p      = curr$p,
+                                 theta  = curr$theta,
+                                 tau    = curr$tau,
+                                 rho    = curr$rho,
+                                 loglik = sum(curr$log_likelihood))
     }
   }
 
