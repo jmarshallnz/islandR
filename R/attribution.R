@@ -356,3 +356,34 @@ predict.attribution <- function(object, newdata=NULL, FUN=median, ...) {
 iterations.attribution <- function(x) {
   length(x$posterior)
 }
+
+#' Generic for retrieving the DIC from a model fit
+#' @param x an object
+#' @return the DIC from the model fit
+#' @export
+DIC <- function(x) {
+  UseMethod("DIC", x)
+}
+
+#' Retrieve the Deviance Information Critieria (DIC) of an attribution object
+#' @export
+#' @param x An object of class `attribution`
+#' @return The DIC of the model
+DIC.attribution <- function(x) {
+  # Posterior mean of theta, phi, and log likelihood
+  post_theta  = simplify2array(lapply(seq_along(x$posterior), function(i) { x$posterior[[i]]$theta }))
+  post_phi    = x$genotype_data$sampling_distribution
+  post_loglik = simplify2array(lapply(seq_along(x$posterior), function(i) { x$posterior[[i]]$loglik }))
+  mean_theta  = apply(post_theta, 1:2, mean)
+  mean_phi    = apply(post_phi, 1:2, mean)
+  mean_loglik = mean(post_loglik)
+  # log likelihood at posterior mean
+  mean_p      = x$model_matrix %*% mean_theta
+  loglik_mean = sum(log_lik_full(x$cases, mean_phi, mean_p))
+  # compute DIC
+  d_theta_bar = -2*loglik_mean
+  d_bar_theta = -2*mean_loglik
+  p_d         = d_bar_theta - d_theta_bar
+  DIC = d_theta_bar + 2*p_d
+  DIC
+}
