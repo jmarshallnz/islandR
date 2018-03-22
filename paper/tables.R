@@ -43,7 +43,12 @@ cases %>% left_join(popn) %>%
 
 # Table 4: DIC values
 
-# TODO: Need to grab this out of the (saved) model objects from fig_attribution.R
+dic_attr <- read.csv('dic_attribution.csv')
+dic_attr %>% mutate(DIC=round(DIC, 1),
+                    Model = factor(AttributionModel, levels=c("Linear", "Categorical"))) %>%
+  select(Model, GenotypeModel, DIC) %>%
+  spread(GenotypeModel, DIC) %>%
+  knitr::kable('latex', booktabs=TRUE, linesep='', format.args=list(big.mark=','))
 
 # Additional information for the text:
 

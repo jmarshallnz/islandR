@@ -40,7 +40,7 @@ df_dl <- predict(at_id, FUN=identity) %>% extract(X, into="UR2006_num", regex="U
 
 df <- bind_rows(df_il, df_dl)
 
-save(list='df', file='attribution_fits_intervention.Rdata')
+save(list=c('df', 'at_if', 'at_id'), file='attribution_fits_intervention.Rdata')
 load('attribution_fits_intervention.Rdata')
 
 plot_df <- df %>%

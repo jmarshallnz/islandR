@@ -43,7 +43,15 @@ df_dl <- predict(at_dl, FUN=identity) %>% extract(X, into="UR2006_num", regex="U
 
 df <- bind_rows(df_if, df_il, df_df, df_dl)
 
-save(list='df', file='attribution_fits.Rdata')
+# compute DIC's
+dic_data <-
+  bind_rows(data.frame(DIC = DIC(at_il), GenotypeModel='Island', AttributionModel='Linear'),
+            data.frame(DIC = DIC(at_if), GenotypeModel='Island', AttributionModel='Categorical'),
+            data.frame(DIC = DIC(at_dl), GenotypeModel='Dirichlet', AttributionModel='Linear'),
+            data.frame(DIC = DIC(at_df), GenotypeModel='Dirichlet', AttributionModel='Categorical'))
+write.csv(dic_data, 'dic_attribution.csv', row.names=FALSE)
+
+save(list=c('df', 'at_if', 'at_il', 'at_df', 'at_dl'), file='attribution_fits.Rdata')
 load('attribution_fits.Rdata')
 
 plot_df <- df %>%

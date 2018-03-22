@@ -236,16 +236,16 @@ All code for fitting the genotype distributions, estimating attribution probabil
 
 \begin{table}
   \begin{center}
-    \begin{tabular}{crrrrr}
-      \toprule
-      & \multicolumn{2}{c}{Island model}  & \multicolumn{1}{c}{} & \multicolumn{2}{c}{Dirichlet model} \\
-      Data & Linear & Categorical & & Linear & Categorical\\ \midrule
-      whole period  & 7913.6 & 7943.3  & & 10328.4  & 10389.8 \\
-      post-intervention period  & 5413.4  & 5439.5  & & 6615.1   & 6668.9 \\
-      \bottomrule
-    \end{tabular}
+	\begin{tabular}{lrr}
+	\toprule
+	Model & Dirichlet & Island\\
+	\midrule
+	Linear & 10,968.3 & 12,276.4\\
+	Categorical & 10,976.4 & 12,287.2\\
+	\bottomrule
+	\end{tabular}
   \end{center}
-  \caption{DIC values for the linear model and for the categorical model applied to the data from 2005 to 2014 (whole period) and to the data from 2008 to 2014 (post-intervention period) given the genotypic information is from the asymmetric Island model or the Dirichlet model.}
+  \caption{DIC values for the linear model and for the categorical model applied to the data from 2005 to 2014 for the the asymmetric Island and Dirichlet models.}
   \label{tab:dic}
 \end{table}
 
