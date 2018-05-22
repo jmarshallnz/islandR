@@ -56,7 +56,16 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
 
   source.frame = cbind(Type=sources.frame[[type]], allele.frame, Source=sources.frame[[response]])
 
-  # add on the unique types to estimate the sample distribution on
+  # add on the unique types to estimate the sample distribution on.
+
+  # NOTE: This only works for unique *HUMAN* types. It doesn't make sense for unique *SOURCE* types
+  #       due to the way the island model leave-one out works. i.e. Human types need to use a different
+  #       computation to source types for uniqueness (see human_unique and beast_unique in island model code)
+  #
+  #       I think the only way to fix this easily without massively hacking the island model code (e.g.
+  #       refactoring it so that it uses distance between types) is to have a flag for actual human type
+  #       and beast type. i.e. get the island model to spit out the attribution for the beast types as
+  #       well and then patch it up afterwards?
   types.frame = model.frame(formula, data = types)
   allele.frame  = model.frame(sequences, data = types)
 

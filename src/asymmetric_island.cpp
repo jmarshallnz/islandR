@@ -105,6 +105,17 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 void Island::precalc() {
   // TODO: Much of this can probably be vectorised
 
+  // NOTE: This just plain doesn't work for those human STs that are _identical_ to
+  //       beast STs. i.e. we can't attribute beast STs using this scenario, as
+  //       if we're pretending a beast ST is human, then human_unique will always
+  //       be false (as we would have seen all alleles before). Similarly, same
+  //       will always be true, as we would have seen it before.
+  //       So the ST distribution we derive only works for those types we haven't
+  //       seen before, or are genuinely identical between beast and human.
+  //
+  //       The correct thing to do if we wish to also get the ST distribution for
+  //       non-human STs is compute it using beast_unique etc.
+
 	human_unique = LogicalMatrix(human.nrow(), nloc);
   for(int i = 0; i < human.nrow(); i++) {
     for(int l = 0; l < nloc; l++) {
