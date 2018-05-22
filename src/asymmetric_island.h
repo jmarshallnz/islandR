@@ -3,6 +3,8 @@
 
 #include <Rcpp.h>
 
+class logdouble; // forward definition
+
 class Island {
   // Not very efficient 2d,3d array class generated from vectors
   typedef std::vector< std::vector<double> > NumericArray2;
@@ -75,6 +77,7 @@ public:
 
 	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
+	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
 
 	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
 	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);

@@ -9,58 +9,64 @@
 
 using namespace Rcpp;
 
+/* Computes the log likelihood of ST j in source i */
+logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+  double punique = A(i,ng);
+  std::vector<double> psame(nloc);
+  std::vector<double> pdiff(nloc);
+  for (int l = 0; l < nloc; l++) {
+    int allele = MLST[i](j, l);
+    double ac = acount[i][l][allele];
+    double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
+    double bk = b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
+    double b_ = R(i,0) * bk + R(i,1) * (1.0-A(i,ng));// if no rec then must be same as CF (barring mutation)
+    if(fabs(b_)<1.0e-7) {
+      b_ = 0.0;
+    }
+    psame[l] = b_;
+    b_ = R(i,0) * bk;	// different so must have been recombination
+
+    if(fabs(b_)<1.0e-7) {
+      b_ = 0.0;
+    }
+    pdiff[l] = b_;
+  }
+  std::vector<logdouble> l_j(ng);
+  for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
+    double mii = A(i,ii)/(1.0-A(i,ng));
+    std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
+    for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
+      double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
+        : ABUN[ii][jj]; // NOTE: This can be zero.
+      logdouble l_jj = mii;
+      LogicalMatrix::Row BEAST_UNIQUE = beast_unique[i](j, _);
+      bool *SAME = ksame[i][j][ii][jj];
+      for (int l = 0; l < nloc; l++, SAME++) {
+        if (BEAST_UNIQUE[l]) {				// new allele (allow some rounding error)
+          l_jj *= punique;
+        }
+        else if(*SAME) {				// previously observed and same as CF
+          l_jj *= psame[l];
+        }
+        else {							// previously observed but different to CF
+          l_jj *= pdiff[l];
+        }
+      }
+      l_ii[jj] = l_jj * ncopiesjj;
+    }
+    l_j[ii] = sum(l_ii) / size[ii];
+  }
+  return sum(l_j);
+}
+
 double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
 	logdouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
-		double punique = A(i,ng);
 		for (int j = 0; j < nST[i]; j++) {
-			double ncopiesj = ABUN[i][j];
-			std::vector<double> psame(nloc);
-			std::vector<double> pdiff(nloc);
-			for (int l = 0; l < nloc; l++) {
-				int allele = MLST[i](j, l);
-				double ac = acount[i][l][allele];
-				double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-				double bk = b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
-				double b_ = R(i,0) * bk + R(i,1) * (1.0-A(i,ng));// if no rec then must be same as CF (barring mutation)
-				if(fabs(b_)<1.0e-7) {
-					b_ = 0.0;
-				}
-				psame[l] = b_;
-				b_ = R(i,0) * bk;	// different so must have been recombination
-
-				if(fabs(b_)<1.0e-7) {
-					b_ = 0.0;
-				}
-				pdiff[l] = b_;
-			}
-			std::vector<logdouble> l_j(ng);
-			for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
-				double mii = A(i,ii)/(1.0-A(i,ng));
-				std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
-				for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
-					double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
-						: ABUN[ii][jj]; // NOTE: This can be zero.
-					logdouble l_jj = mii;
-					LogicalMatrix::Row BEAST_UNIQUE = beast_unique[i](j, _);
-					bool *SAME = ksame[i][j][ii][jj];
-					for (int l = 0; l < nloc; l++, SAME++) {
-						if (BEAST_UNIQUE[l]) {				// new allele (allow some rounding error)
-							l_jj *= punique;
-						}
-						else if(*SAME) {				// previously observed and same as CF
-							l_jj *= psame[l];
-						}
-						else {							// previously observed but different to CF
-							l_jj *= pdiff[l];
-						}
-					}
-					l_ii[jj] = l_jj * ncopiesjj;
-				}
-				l_j[ii] = sum(l_ii) / size[ii];
-			}
-			lik *= sum(l_j)^ncopiesj;
+		  double ncopiesj = ABUN[i][j];
+		  logdouble l_ij = known_source_loglik_ij(i,j, A, b, R);
+		  lik *= l_ij^ncopiesj;
 		}
 	}
 	return lik.log();
