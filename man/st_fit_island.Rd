@@ -5,8 +5,8 @@
 \title{Fit the sampling distribution of genotypes to sources using the assymmetric island model.}
 \usage{
 st_fit_island(formula, sequences, non_primary = "Human", samples = 100,
-  burnin = 10, thin = 100, priors = list(migration = 1, recombination =
-  1), data)
+  burnin = 10, thin = 100, priors = list(migration = 1, recombination
+  = 1), data)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}

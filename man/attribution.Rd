@@ -4,8 +4,8 @@
 \alias{attribution}
 \title{Attribute cases to sources via MCMC}
 \usage{
-attribution(formula, sampling_dist, data, iterations = 10000, burnin = 1000,
-  thinning = 100)
+attribution(formula, sampling_dist, data, iterations = 10000,
+  burnin = 1000, thinning = 100)
 }
 \arguments{
 \item{formula}{A formula of the form `GenoType ~ Covariates` for cases}

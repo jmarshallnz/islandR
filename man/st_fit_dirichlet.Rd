@@ -4,8 +4,8 @@
 \alias{st_fit_dirichlet}
 \title{Fit the sampling distribution of genotypes to sources using a Dirichlet/multinomial distribution.}
 \usage{
-st_fit_dirichlet(formula, prior = 1, non_primary = "Human", samples = 100,
-  data)
+st_fit_dirichlet(formula, prior = 1, non_primary = "Human",
+  samples = 100, data)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}
