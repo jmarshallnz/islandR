@@ -42,6 +42,17 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
   type = labels(mod.terms)
   unique = !duplicated(data[[type]])
 
+  # the island model assumes all alleles (and all types) are non-negative integers, as it uses them to index stuff.
+  # let's assume that they're just character strings, convert them to factors and then back again. We'll then have
+  # a map for them.
+  sequence_cols <- all.vars(terms(sequences))
+  allele.factor <- lapply(data[sequence_cols], as.factor)
+  allele.map    <- lapply(allele.factor, levels)
+  allele.numeric <- lapply(allele.factor, as.numeric)
+
+  # replace our sequence data with numeric. We can use allele.map to map back again
+  data[sequence_cols] <- allele.numeric
+
   # filter out the non-primaries, and unique types
   sources = data[!(data[[response]] %in% non_primary),]
   types = data[unique,]
@@ -95,7 +106,12 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
                                "Likelihood")
 
   # righto, now construct a useful object...
-  x = list(types = type.frame$Type, sequences = type.frame[,-c(1,ncol(type.frame))], sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = data.frame(out$evolution[-1,]), model = "island")
+  sequences = type.frame[,-c(1,ncol(type.frame))]
+  # convert our sequences back
+  x <- lapply(sequence_cols, function(col) { allele.map[[col]][ sequences[[col]] ] } )
+  sequences[sequence_cols] <- x
+
+  x = list(types = type.frame$Type, sequences = sequences, sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = data.frame(out$evolution[-1,]), model = "island")
   class(x) = c("island", "sample_dist")
   x
 }
