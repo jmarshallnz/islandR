@@ -82,12 +82,12 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 		pdiff[l] = std::max(M(i,1)*R(i,0) * b[i][l][human_allele],0.0);
 		psame[l] = std::max(M(i,1)*R(i,0) * b[i][l][human_allele] + R(i,1) * M(i,1),0.0);
 	}
-	double lik = 0.0;
+	std::vector<logdouble> l_j(ng);
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
 		double mii = A(i,ii);
-		double l_ii = 0.0;
+		std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
 		for (int jj = 0; jj <nST[ii]; jj++) {
-			double l_jj = mii;						//	Cycle through each ST from that source
+			logdouble l_jj = mii;						//	Cycle through each ST from that source
 			LogicalMatrix::Row HUMAN_UNIQUE = human_unique(id, _);
 			bool* SAME = same[id][ii][jj];
 			for(int l=0; l<nloc; l++, SAME++) {
@@ -101,11 +101,11 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 					l_jj *= pdiff[l];
 				}
 			}
-			l_ii += l_jj * ABUN[ii][jj];
+			l_ii[jj] = l_jj * ABUN[ii][jj];
 		}
-		lik += l_ii / size[ii];
+		l_j[ii] = sum(l_ii) / size[ii];
 	}
-	return lik;
+	return exp(sum(l_j).log());
 }
 
 void Island::precalc() {
