@@ -105,7 +105,7 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 		}
 		l_j[ii] = sum(l_ii) / size[ii];
 	}
-	return exp(sum(l_j).log());
+	return sum(l_j).log();
 }
 
 void Island::precalc() {

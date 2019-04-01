@@ -1,24 +1,28 @@
 #include <Rcpp.h>
+#include "logdouble.h"
+
 using namespace Rcpp;
 
 // log-likelihood function for assignment model
 
 // [[Rcpp::export]]
 double log_lik(NumericMatrix humans, NumericMatrix phi, NumericVector p) {
-  double loglik = 0;
+  logdouble lik;
   // convert p to exp(p)
   NumericVector P = exp(p);
   P.push_back(1);
   double scaleP = 1 / std::accumulate(P.begin(), P.end(), 0.0);
+  for (int j = 0; j < P.size(); j++)
+    P[j] = P[j] * scaleP;
 
   // run through the rows of the human matrix
   for (int h = 0; h < humans.nrow(); ++h) {
     // calculate the likelihood for this human isolate
-    double lik_h = 0;
+    std::vector<logdouble> lik_h(P.size());
     for (int j = 0; j < P.size(); j++) {
-      lik_h += P[j] * phi(humans(h,0)-1, j);
+      lik_h[j] = logdouble(phi(humans(h,0)-1, j), 1) * P[j];
     }
-    loglik += humans(h,1) * log(lik_h * scaleP);
+    lik *= sum(lik_h) ^ humans(h,1);
   }
-  return loglik;
+  return lik.log();
 }
