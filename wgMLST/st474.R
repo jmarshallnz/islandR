@@ -95,6 +95,7 @@ humans <- final %>%
 
 # for a laugh, attempt to attribute (ignoring time for now)
 mod = attribution(ST ~ 1, st, data=humans, iterations=10000, burnin=1000, thinning=100)
+#mod = attribution(ST ~ 1, st, data=humans, iterations=100, burnin=10, thinning=1)
 # check attribution
 predict(mod, FUN=mean)
 
