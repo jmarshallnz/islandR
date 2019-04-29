@@ -6,7 +6,7 @@ library(forcats)
 library(ggplot2)
 library(purrr)
 
-load("wgMLST/474_attribution.RData")
+load("wgMLST/474_attribution_update.RData")
 
 # now do prediction on each isolate. The way to do this is to combine the predictions from
 # above with the predictions from st_fit. Idea is that st_fit gives P(ST | source)
@@ -42,20 +42,14 @@ for (i in seq_along(st$types)) {
                                    Type = st$types[i])
 }
 human_type_attr <- do.call(rbind, human_post_types)
-human_type_attr <- human_type_attr %>% left_join(final %>% select(genome, Type=ST, source))
-
-
-# now join to the isolate info
-iso_info <- read_excel('wgMLST/st474_530isolates.xlsx') %>% select(genome, LabId=`Sample name`)
-
-human_type_attr <- human_type_attr %>% left_join(iso_info) %>% arrange(genome)
+human_type_attr <- human_type_attr %>% left_join(final %>% select(FILE, Type=ST, source))
 
 # right, now generate our barplots
 human_types <- human_type_attr %>% filter(source == "Human") %>%
   group_by(Type) %>% mutate(v_source_given_st = sum(v_source_given_st)) %>% ungroup %>%
-  spread(Source, p_source_given_st) %>% select(genome:LabId, Uncertainty=v_source_given_st, Cattle:Supplier_A)
+  spread(Source, p_source_given_st) %>% select(FILE, Uncertainty=v_source_given_st, EnvWater:`Supplier A`)
 
-write.csv(human_types, "human_barplots_with_uncertainty.csv", row.names=FALSE)
+write.csv(human_types, "wgMLST/human_barplots_with_uncertainty.csv", row.names=FALSE)
 library(RColorBrewer)
 col <- brewer.pal(6, "Dark2")
 pdf("barplot.pdf", width=4, height=40)

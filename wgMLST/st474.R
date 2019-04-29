@@ -28,8 +28,7 @@ wgmlst <- wgmlst %>%
                                Ruminant = c("Cattle", "Sheep"),
                                OtherPoultry = c("Supplier_other", "Supplier B", "Spent_hen"),
                                EnvWater = "Environmental water")) %>%
-  rename(source = SA_model_source) %>%
-  select(-FILE)
+  rename(source = SA_model_source)
 
 table(wgmlst$source, useNA='always')
 # filter out stuff we don't want
@@ -46,7 +45,7 @@ sts <- lapply(seeds, function(x) {
                     non_primary = "Human",
                     data = final,
                     method="island",
-                    sequences = formula(terms(~ . - source - ST, data=final, simplify=TRUE)),
+                    sequences = formula(terms(~ . - FILE - source - ST, data=final, simplify=TRUE)),
                     samples=samples, burnin=burnin, thin=thin)
               })
 
@@ -80,12 +79,14 @@ bind_sampling_dists <- function(sts) {
 }
 
 # combine all these together to do some trace plots
+if (0) {
 evol <- lapply(seq_along(seeds), function(x) { sts[[x]]$evolution_params %>% mutate(Seed=seeds[x])})
 all <- bind_rows(evol) %>% gather(Param, Value, -Seed, -Iteration)
 
 ggplot(all) +
   geom_line(aes(Iteration, Value, col=factor(Seed))) +
   facet_wrap(~Param, scales='free_y')
+}
 
 st <- bind_sampling_dists(sts)
 
@@ -101,5 +102,5 @@ predict(mod, FUN=mean)
 
 modtime = attribution(ST ~ Time, st, data=humans, iterations=10000, burnin=1000, thinning=100)
 
-save(final, humans, st, mod, modtime, file="wgMLST/474_attribution.RData")
+save(final, humans, st, mod, file="wgMLST/474_attribution_update.RData")
 
