@@ -11,35 +11,27 @@ samples <- 100
 thin    <- 100
 burnin  <- 10
 
-#wgmlst <- read.table('wgMLST/allele_profiles.txt')
-#names(wgmlst)[1] <- "genome"
-wgmlst <- read.csv('wgMLST/wgmlst.csv')
-wgmlst <- wgmlst %>% rename(genome=ID) %>%
-  mutate(genome = sprintf('%03d.fas', genome))
+# Updated file
+wgmlst <- read.table('wgMLST/cgMLST_update.txt', header=TRUE, sep = "\t", stringsAsFactors=FALSE)
 
 # remove columns that are useless (zero variance)
-v_col <- apply(wgmlst[,-1],2,var)
-wgmlst <- wgmlst[, c(1,which(v_col > 0)+1)]
+v_col <- apply(wgmlst[,-c(1,2)],2,var)
+wgmlst <- wgmlst[, c(1,2,which(v_col > 0)+2)]
 
 # add an ST column, being the pasted copy of everything else
-wgmlst$ST <- as.numeric(as.factor(apply(wgmlst[,-1],1,paste,collapse='_')))
-
-# read in isolate information
-iso <- read_excel('wgMLST/st474_530isolates.xlsx') %>%
-  mutate(Date = as.Date(ifelse(is.na(SampledDate), as.character(TestedDate), as.character(SampledDate)))) %>%
-  select(genome, source=SA_model_source, Date) %>%
-  mutate(source = ifelse(source == 'Supplier A', ifelse(Date < '2008-01-01', 'A_before', 'A_after'), source))
+wgmlst$ST <- as.numeric(as.factor(apply(wgmlst[,-c(1:2)],1,paste,collapse='_')))
 
 # join the wgmlst up to the isolate information
-wgmlst <- wgmlst %>% left_join(iso) %>%
-  mutate(source = fct_collapse(source,
+wgmlst <- wgmlst %>%
+  mutate(SA_model_source = fct_collapse(SA_model_source,
                                Other = c("Cat_dog_pet", "Pig", "Wild_bird_other"),
+                               Ruminant = c("Cattle", "Sheep"),
                                OtherPoultry = c("Supplier_other", "Supplier B", "Spent_hen"),
-                               Supplier_A = c("A_before", "A_after"),
-                               EnvWater = "Environmental water"))
+                               EnvWater = "Environmental water")) %>%
+  rename(source = SA_model_source) %>%
+  select(-FILE)
 
 table(wgmlst$source, useNA='always')
-table(iso$source, useNA='always')
 # filter out stuff we don't want
 final <- wgmlst %>% filter(!is.na(source)) # %>% filter(source %in% c('A_after', 'A_before', 'Environmental water', 'Human', 'Supplier_other', 'Cattle', 'Sheep'))
 table(final$source, useNA='always')
@@ -54,7 +46,7 @@ sts <- lapply(seeds, function(x) {
                     non_primary = "Human",
                     data = final,
                     method="island",
-                    sequences = formula(terms(~ . - Date - genome - source - ST, data=final, simplify=TRUE)),
+                    sequences = formula(terms(~ . - source - ST, data=final, simplify=TRUE)),
                     samples=samples, burnin=burnin, thin=thin)
               })
 
@@ -99,8 +91,7 @@ st <- bind_sampling_dists(sts)
 
 # filter out the humans
 humans <- final %>%
-  filter(source == "Human") %>%
-  mutate(Time = ifelse(Date < '2008-01-01', "Before", "After"))
+  filter(source == "Human")
 
 # for a laugh, attempt to attribute (ignoring time for now)
 mod = attribution(ST ~ 1, st, data=humans, iterations=10000, burnin=1000, thinning=100)
