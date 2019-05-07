@@ -23,6 +23,18 @@ post <- posterior %>% mutate(iteration = (identity-1)%/%100+1)
 # for each source. In this case, can just use P(Source) = 1
 #
 # run through for each TYPE.
+
+posterior_prob <- function(log_p_given_source, p) {
+  # This should do:
+  #  num <- exp(log_p_given_source) * p
+  #  num / sum(num)
+  # but, log_p_given_source is often very small, leading to underflows (i.e. exp = 0)
+  # whereby sum(num) = 0. Thus, we first factor out the maximum log to avoid this
+  max_log_p_given_source <- max(log_p_given_source)
+  num <- exp(log_p_given_source - max_log_p_given_source) * p
+  num / sum(num)
+}
+
 human_post_types <- list()
 for (i in seq_along(st$types)) {
   cat("Processing type", i, "\n")
@@ -34,9 +46,8 @@ for (i in seq_along(st$types)) {
     gather(iteration, p_given_source, -Source, convert=TRUE)
 
   human_post_types[[i]] <- p_type %>% left_join(post, by=c("iteration", "Source")) %>%
-    mutate(bayes_num = p_given_source * p) %>%
     group_by(iteration, identity) %>%
-    mutate(bayes_den = sum(bayes_num), p_source_given_st = bayes_num / bayes_den) %>%
+    mutate(p_source_given_st = posterior_prob(p_given_source, p)) %>%
     group_by(Source) %>% summarize(v_source_given_st = var(p_source_given_st),
                                    p_source_given_st = mean(p_source_given_st),
                                    Type = st$types[i])
@@ -50,51 +61,9 @@ human_types <- human_type_attr %>% filter(source == "Human") %>%
   spread(Source, p_source_given_st) %>% select(FILE, Uncertainty=v_source_given_st, EnvWater:`Supplier A`)
 
 write.csv(human_types, "wgMLST/human_barplots_with_uncertainty.csv", row.names=FALSE)
-library(RColorBrewer)
-col <- brewer.pal(6, "Dark2")
-pdf("barplot.pdf", width=4, height=40)
-par(mar=c(0.1,5,2,0.1))
-b <- barplot(t(as.matrix(human_types %>% select(-Type, -genome, -source, -LabId))), beside = FALSE, border=NA,
-             col=col, axes=FALSE, space=1, horiz=TRUE, offset=-0.1, las=1, cex.names = 0.5, xaxs="i", yaxs="i")
-mtext(human_types$genome, side=2, line=0.5, las=1, at=b, cex=0.5)
-mtext(human_types$LabId, side=2, line=2.5, las=1, at=b, cex=0.5)
-par(lend=1)
-legend('top', legend=names(human_types %>% select(-Type, -genome, -source, -LabId)), inset=c(-3,-0.01), col=col, xpd=TRUE,
-       ncol=3, bty = 'n', cex=0.5, border=NA, lty = 1, lwd = 8)
-dev.off()
 
-# NORMALISE the sampling distribution first. i.e. divide by
-st_dist <- list()
-for (i in seq_along(st$types)) {
-  p_type <- st$sampling_distribution[i,,]
-  colnames(p_type) <- 1:ncol(p_type)
-  p_type <- p_type %>% as.data.frame %>% tibble::rownames_to_column("Source") %>%
-    gather(iteration, p_given_source, -Source, convert=TRUE) %>%
-    mutate(Type = st$types[i])
-  st_dist[[i]] <- p_type
-}
-st_dist <- do.call(rbind, st_dist) %>%
-  group_by(Source, iteration) %>% mutate(p_given_source_norm = p_given_source / sum(p_given_source)) %>%
-  group_by(Type, iteration) %>% mutate(p_source_given_st = p_given_source / sum(p_given_source),
-                                       p_source_given_st_norm = p_given_source_norm / sum(p_given_source_norm))
+gg_types <- human_types %>% arrange(`Supplier A`) %>% group_by(FILE) %>% gather(Source, P, EnvWater:`Supplier A`) %>%
+  ungroup %>%
+  mutate(FILE = fct_reorder2(FILE, Source, P, function(x, y) { y[x == "Supplier A"] }))
 
-source_type_attr <- st_dist %>% group_by(Source, Type) %>% summarize(p_source_given_st = mean(p_source_given_st),
-                                                                     p_source_given_st_norm = mean(p_source_given_st_norm))
-
-source_type_attr <- source_type_attr %>% left_join(final %>% select(genome, Type=ST, source))
-
-source_type_attr <- source_type_attr %>% left_join(iso_info) %>% arrange(genome)
-
-animals <- source_type_attr %>% filter(source != "Human") %>% select(-p_source_given_st) %>%
-  spread(Source, p_source_given_st_norm) %>% arrange(source, genome)
-pdf("animals.pdf", width=4, height=20)
-par(mar=c(0.1,5,2,0.1))
-b <- barplot(t(as.matrix(animals %>% select(-Type, -genome, -source, -LabId))), beside = FALSE, border=NA,
-             col=col, axes=FALSE, space=1, horiz=TRUE, offset=-0.1, las=1, cex.names = 0.5, xaxs="i", yaxs="i")
-mtext(animals$genome, side=2, line=0.5, las=1, at=b, cex=0.5)
-mtext(animals$source, side=2, line=2.5, las=1, at=b, cex=0.5)
-par(lend=1)
-legend('top', legend=names(animals %>% select(-Type, -genome, -source, -LabId)), inset=c(-3,-0.01), col=col, xpd=TRUE,
-       ncol=3, bty = 'n', cex=0.5, border=NA, lty = 1, lwd = 8)
-dev.off()
-
+ggplot(gg_types, aes(x=FILE, y=P, fill=Source)) + geom_col()
