@@ -17,6 +17,6 @@ Imports:
     reshape2,
     MASS
 URL: http://github.com/jmarshallnz/islandR
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
 Suggests:
     testthat

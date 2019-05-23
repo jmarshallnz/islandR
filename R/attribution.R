@@ -10,9 +10,10 @@ NULL
 #' @param iterations the number of iterations to use in the MCMC
 #' @param burnin the number of iterations to eliminate due to burnin
 #' @param thinning how many iterations to perform before taking a sample
+#' @param priors a list of priors to use of the form `priors=list(theta=list(mean=0,prec=0.1))`
 #' @return an object of type attribution
 #' @seealso print.attribution, summary.attribution, plot.attribution
-attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1000, thinning=100) {
+attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1000, thinning=100, priors=NULL) {
 
   # check inputs
   if("sampling_dist" %in% class(sampling_dist)) {
@@ -72,7 +73,7 @@ attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1
   ar = c(0,0)
   for (i in seq_len(iterations(sampling_dist))) {
     cat("Performing iteration", i, "of", iterations(sampling_dist), "\n")
-    iter = mcmc_no_ar1(y, reduced.matrix, sampling_dist$sampling_distribution[,,i], iterations, burnin, thinning)
+    iter = mcmc_no_ar1(y, reduced.matrix, sampling_dist$sampling_distribution[,,i], iterations, burnin, thinning, priors)
     post = c(post, iter$post)
     ar = ar + iter$ar
   }

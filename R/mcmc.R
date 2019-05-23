@@ -178,14 +178,14 @@ log_lik_full = function(humans, phi, p) {
 }
 
 # non-hierarchical update for theta
-update_theta = function(curr, humans, phi) {
+update_theta = function(curr, humans, phi, priors) {
 
   # proposal distribution
   theta_proposal_sigma = 2
 
   # prior distribution
-  theta_0    = matrix(0, nrow(curr$theta), ncol(curr$theta))
-  theta_prec = diag(0.1, nrow(curr$theta)) # same prior across all sources
+  theta_0    = matrix(priors$theta$mean, nrow(curr$theta), ncol(curr$theta))
+  theta_prec = diag(priors$theta$prec, nrow(curr$theta)) # same prior across all sources
 
   # in this updater, p is just X %*% theta
 
@@ -376,7 +376,12 @@ update_ranef = function(curr, humans, phi) {
   return(curr)
 }
 
-mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinning = 100) {
+mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
+
+  if (is.null(priors)) {
+    priors <- list()
+    priors$theta <- list(mean = 0, prec = 0.1)
+  }
 
   # accept/reject
   accept_reject = numeric(2)
@@ -407,7 +412,7 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   for (i in seq_len(iterations+burnin)) {
 
     # update the theta's + p's
-    curr = update_theta(curr, humans, phi)
+    curr = update_theta(curr, humans, phi, priors)
 
     # sample
     if (i %% 1000 == 0) {

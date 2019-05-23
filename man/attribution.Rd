@@ -5,7 +5,7 @@
 \title{Attribute cases to sources via MCMC}
 \usage{
 attribution(formula, sampling_dist, data, iterations = 10000,
-  burnin = 1000, thinning = 100)
+  burnin = 1000, thinning = 100, priors = NULL)
 }
 \arguments{
 \item{formula}{A formula of the form `GenoType ~ Covariates` for cases}
@@ -19,6 +19,8 @@ attribution(formula, sampling_dist, data, iterations = 10000,
 \item{burnin}{the number of iterations to eliminate due to burnin}
 
 \item{thinning}{how many iterations to perform before taking a sample}
+
+\item{priors}{a list of priors to use of the form `priors=list(theta=list(mean=0,prec=0.1))`}
 }
 \value{
 an object of type attribution
