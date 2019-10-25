@@ -14,9 +14,8 @@ List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector 
   island.initialise(isolates);
 
   double beta  = beta_migration[0];
-  double gamma = gamma_recombination[0];
 
-  island.mcmc6f(beta, gamma, samples, burnin, thin);
+  island.mcmc6f(beta, gamma_recombination, samples, burnin, thin);
 
   List out;
   out["hum_lik"] = island.human_likelihoods;
