@@ -191,7 +191,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double beta, const double gamma_, const int samples, const int burnin, const int thin) {
+void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int samples, const int burnin, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
@@ -209,7 +209,9 @@ void Island::mcmc6f(const double beta, const double gamma_, const int samples, c
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
 	for (int i = 0; i < ng; i++) {
-		r(i,_) = rgamma(2, gamma_, 1.0);
+	  for (int j = 0; j < 2; j++) {
+		  r(i,j) = R::rgamma(gamma_[j], 1.0);
+	  }
 	}
 	calc_R(r, R);
 
@@ -326,9 +328,9 @@ void Island::mcmc6f(const double beta, const double gamma_, const int samples, c
 					rr_prop[1] = rr[0];
 					NumericMatrix R_prop(clone(R));
 					R_prop(popid,_) = normalise(rr_prop);
-					double logalpha = 0.0;
-					// Prior ratio equals 1 because prior is symmetric
-					// Symmetric proposal so Hastings ratio equals 1
+					// prior is gamma, so we have log(prod(dgamma(rev(x), r, rate=1))/prod(dgamma(x, r, rate=1)))
+					double logalpha = (gamma_[1] - gamma_[0])*log(rr[0]/rr[1]);
+					// Symmetric proposal (swap)
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, R_prop);
 
@@ -353,7 +355,7 @@ void Island::mcmc6f(const double beta, const double gamma_, const int samples, c
 					R_prop(popid,_) = normalise(rr_prop);
 					// Prior-Hastings ratio
 					double logalpha = rr[id] - rr_prop[id];
-					logalpha += gamma_ * log(rr_prop[id]/rr[id]);
+					logalpha += gamma_[id] * log(rr_prop[id]/rr[id]);
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, R_prop);
 
