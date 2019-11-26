@@ -75,12 +75,12 @@ public:
 	int multinom(const Rcpp::NumericVector &p);
 	int sample(int n);
 
-	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
-	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
-	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
+	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
+	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
+	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
 
 	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
-	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);
+	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A, Rcpp::NumericMatrix &M);
 	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
 	void precalc();
