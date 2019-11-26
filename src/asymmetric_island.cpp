@@ -428,7 +428,9 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-					  r(rowid,_) = r_prop(rowid,_);
+//					  Rcout << "Accepted R: " << r_prop(rowid,0) << "," << r_prop(rowid,1) << " from " <<  r(rowid,0) << "," << r(rowid,1) <<
+//					    " LL " << newloglik << " from " << loglikelihood << std::endl;
+            r(rowid,_) = r_prop(rowid,_);
 						R = R_prop;
 						loglikelihood = newloglik;
 						accept(5,0)++;
