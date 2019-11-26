@@ -219,12 +219,13 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	}
 	NumericMatrix M = normalise_product(m_X, m);
 
-	NumericMatrix r_X = NumericMatrix::diag(ng, 1);
+  NumericMatrix r_X(ng, 1);
+  r_X(_,0) = rep(1,ng);
 
 	NumericMatrix r(r_X.ncol(),2);	///< Reparameterised recombination rates
 	for (int i = 0; i < r.nrow(); i++) {
 	  for (int j = 0; j < 2; j++) {
-		  r(i,j) = R::rgamma(gamma_[j], 1.0);
+	    r(i,j) = R::rgamma(gamma_[j], 1.0);
 	  }
 	}
 	NumericMatrix R = normalise_product(r_X, r);
