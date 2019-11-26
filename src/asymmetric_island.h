@@ -80,7 +80,6 @@ public:
 	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
 
 	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
-	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A, Rcpp::NumericMatrix &M);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
 	Rcpp::NumericMatrix normalise_rows(const Rcpp::NumericMatrix &x);
 	void precalc();
