@@ -12,14 +12,15 @@ using namespace Rcpp;
 /* Computes the log likelihood of ST j in source i */
 logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
   double punique = A(i,ng);
+  double mu_i = A(i,ng); // mutation rate
   std::vector<double> psame(nloc);
   std::vector<double> pdiff(nloc);
   for (int l = 0; l < nloc; l++) {
     int allele = MLST[i](j, l);
     double ac = acount[i][l][allele];
     double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-    double bk = b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
-    double b_ = R(i,0) * bk + R(i,1) * (1.0-A(i,ng));// if no rec then must be same as CF (barring mutation)
+    double bk = (1-mu_i)*b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
+    double b_ = R(i,0) * bk + R(i,1) * (1.0-mu_i);// if no rec then must be same as CF (barring mutation)
     if(fabs(b_)<1.0e-7) {
       b_ = 0.0;
     }
@@ -76,11 +77,11 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
-	double puniq = A(i,ng); // mutation rate
+	double mu = A(i,ng);    // mutation rate
 	for (int l = 0; l < nloc; l++) {
 		int human_allele = human(id, l);
-		pdiff[l] = std::max(R(i,0) * b[i][l][human_allele],0.0);
-		psame[l] = std::max(R(i,0) * b[i][l][human_allele] + R(i,1) * (1.0-A(i,ng)),0.0);
+		pdiff[l] = std::max((1.0 - mu)*R(i,0) * b[i][l][human_allele],0.0);
+		psame[l] = std::max((1.0 - mu)*R(i,0) * b[i][l][human_allele] + R(i,1) * (1.0 - mu),0.0);
 	}
 	std::vector<logdouble> l_j(ng);
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
@@ -92,7 +93,7 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 			bool* SAME = same[id][ii][jj];
 			for(int l=0; l<nloc; l++, SAME++) {
 				if (HUMAN_UNIQUE[l]) {						// new allele (allow some rounding error)
-					l_jj *= puniq;
+					l_jj *= mu;
 				}
 				else if(*SAME) {						// previously observed and same as CF
 					l_jj *= psame[l];
@@ -416,7 +417,7 @@ Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {
       for(size_t k = 0; k < acount[i][j].size(); k++) {
         b[i][j][k] = 0.0;
         for(int l = 0; l < ng; l++) {
-          b[i][j][k] += acount[l][j][k] * A(i,l);
+          b[i][j][k] += acount[l][j][k] * A(i,l) / (1.0 - A(i,ng));
           //					bk[i][j][k] += (acount[l][j][k]*(double)size[l]-1.0)/(double)(size[l]-1) * a[i][l];
         }
       }
