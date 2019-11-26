@@ -210,13 +210,12 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	NumericArray3 b = calc_b(A);
 
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
-	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
 	for (int i = 0; i < ng; i++) {
 	  for (int j = 0; j < 2; j++) {
 		  r(i,j) = R::rgamma(gamma_[j], 1.0);
 	  }
 	}
-	calc_R(r, R);
+	NumericMatrix R = normalise_rows(r);
 
 	/* Storage for likelihoods */
 	double loglikelihood = known_source_loglik(A, b, M, R);
@@ -412,15 +411,16 @@ void Island::calc_A(NumericMatrix &a, NumericMatrix &A, NumericMatrix &M) {
   }
 }
 
-// Assumes R is correctly sized
-void Island::calc_R(NumericMatrix &r, NumericMatrix &R) {
-  for (int i = 0; i < r.nrow(); i++) {
-    R(i,_) = normalise(r(i,_));
-  }
-}
-
 NumericVector Island::normalise(const NumericVector &x) {
   return x / sum(x);
+}
+
+NumericMatrix Island::normalise_rows(const NumericMatrix &x) {
+  NumericMatrix X = no_init(x.nrow(), x.ncol());
+  for (int i = 0; i < x.nrow(); i++) {
+    X(i,_) = normalise(x(i,_));
+  }
+  return X;
 }
 
 Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {

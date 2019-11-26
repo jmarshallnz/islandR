@@ -81,8 +81,8 @@ public:
 
 	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
 	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A, Rcpp::NumericMatrix &M);
-	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
+	Rcpp::NumericMatrix normalise_rows(const Rcpp::NumericMatrix &x);
 	void precalc();
 };
 
