@@ -19,7 +19,7 @@ logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, c
     int allele = MLST[i](j, l);
     double ac = acount[i][l][allele];
     double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-    double bk = (1-mu_i)*b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
+    double bk = (1-mu_i)*b[i][l][allele] - (1-mu_i)*A(i,i)*ac + (1-mu_i)*A(i,i)*ac_;
     double b_ = R(i,0) * bk + R(i,1) * (1.0-mu_i);// if no rec then must be same as CF (barring mutation)
     if(fabs(b_)<1.0e-7) {
       b_ = 0.0;
@@ -34,7 +34,7 @@ logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, c
   }
   std::vector<logdouble> l_j(ng);
   for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
-    double mii = A(i,ii)/(1.0-A(i,ng));
+    double mii = A(i,ii);
     std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
     for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
       double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
@@ -85,7 +85,7 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 	}
 	std::vector<logdouble> l_j(ng);
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
-		double mii = A(i,ii)/(1.0-A(i,ng));
+		double mii = A(i,ii);
 		std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
 		for (int jj = 0; jj <nST[ii]; jj++) {
 			logdouble l_jj = mii;						//	Cycle through each ST from that source
@@ -274,6 +274,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					ar_prop[id2] = ar[id1];
 					NumericMatrix A_prop(clone(A));
 					A_prop(popid,_) = normalise(ar_prop);
+					for (int i = 0; i < ng; i++)
+					  A_prop(popid, i) /= (1-A_prop(popid, ng));
 					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
@@ -302,6 +304,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 
 					NumericMatrix A_prop(clone(A));
 					A_prop(popid,_) = normalise(ar_prop);
+					for (int i = 0; i < ng; i++)
+					  A_prop(popid, i) /= (1-A_prop(popid, ng));
 					// Prior-Hastings ratio
 					double logalpha = ar[id] - ar_prop[id];
 					logalpha += beta * log(ar_prop[id]/ar[id]);
@@ -395,6 +399,12 @@ void Island::calc_A(NumericMatrix &a, NumericMatrix &A) {
   for (int i = 0; i < a.nrow(); i++) {
     A(i,_) = normalise(a(i,_));
   }
+  // rescale out the mutation
+  for (int i = 0; i < a.nrow(); i++) {
+    for (int j = 0; j < a.ncol()-1; j++) {
+      A(i,j) /= (1-A(i,ng));
+    }
+  }
 }
 
 // Assumes R is correctly sized
@@ -417,7 +427,7 @@ Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {
       for(size_t k = 0; k < acount[i][j].size(); k++) {
         b[i][j][k] = 0.0;
         for(int l = 0; l < ng; l++) {
-          b[i][j][k] += acount[l][j][k] * A(i,l) / (1.0 - A(i,ng));
+          b[i][j][k] += acount[l][j][k] * A(i,l);
           //					bk[i][j][k] += (acount[l][j][k]*(double)size[l]-1.0)/(double)(size[l]-1) * a[i][l];
         }
       }
