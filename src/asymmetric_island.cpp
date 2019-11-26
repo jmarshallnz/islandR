@@ -224,12 +224,14 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	/* Proposal probabilities */
 	NumericVector proprob = NumericVector::create(42./5.,   //	Update A: switching proposal
                                                 42.,      //	Update A: log-normal proposal
-                                                0.0, 0.0,
+                                                0,//12./5,    //  Update mu: switching proposal
+                                                0,//12.,      //  Update mu: log-normal proposal
                                                 12./5.,   //	Update r: switching proposal
                                                 12.);     //	Update r: log-normal proposal
   proprob = proprob / sum(proprob);
 
 	double sigma_a = 0.5;							//	factor for normal proposal in MH change of a (case 1)
+	double sigma_mu = 0.5;						//	factor for normal proposal in MH change of mu (case 3)
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
@@ -329,6 +331,12 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					}
 					break;
 				}
+			case 2: { // update mu (switching move)
+				  break;
+				}
+			case 3: { // update mu (log normal random walk)
+			    break;
+			  }
 				case 4: {// update r (switching move)
 					int popid = sample(ng);
 				  // Need only update one row of r
