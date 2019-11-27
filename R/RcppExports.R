@@ -5,7 +5,7 @@ log_lik <- function(humans, phi, p) {
     .Call('_islandR_log_lik', PACKAGE = 'islandR', humans, phi, p)
 }
 
-island <- function(isolates, beta_migration, gamma_recombination, samples = 100L, burnin = 10L, thin = 100L) {
-    .Call('_islandR_island', PACKAGE = 'islandR', isolates, beta_migration, gamma_recombination, samples, burnin, thin)
+island <- function(isolates, beta_migration, gamma_mutation, gamma_recombination, samples = 100L, burnin = 10L, thin = 100L) {
+    .Call('_islandR_island', PACKAGE = 'islandR', isolates, beta_migration, gamma_mutation, gamma_recombination, samples, burnin, thin)
 }
 

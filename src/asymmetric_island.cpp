@@ -193,7 +193,7 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &M, NumericMatrix &
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int samples, const int burnin, const int thin) {
+void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const NumericVector &gamma_r, const int samples, const int burnin, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
@@ -212,7 +212,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	NumericMatrix m(ng,2);	///< Reparameterised per-group mutation rates
 	for (int i = 0; i < ng; i++) {
 	  for (int j = 0; j < 2; j++) {
-	    m(i,j) = R::rgamma(beta, 1.0);
+	    m(i,j) = R::rgamma(gamma_m[j], 1.0);
 	  }
 	}
 	NumericMatrix M = normalise_rows(m);
@@ -220,7 +220,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
 	for (int i = 0; i < ng; i++) {
 	  for (int j = 0; j < 2; j++) {
-		  r(i,j) = R::rgamma(gamma_[j], 1.0);
+	    r(i,j) = R::rgamma(gamma_r[j], 1.0);
 	  }
 	}
 	NumericMatrix R = normalise_rows(r);
@@ -333,8 +333,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 				  m_prop(popid, 0) = m(popid, 1);
 				  m_prop(popid, 1) = m(popid, 0);
 				  NumericMatrix M_prop = normalise_rows(m_prop);
-				  double logalpha = 0.0;
-				  // Prior ratio equals 1 because prior is symmetric
+				  // Prior ratio equals 1 if gamma prior is symmetric, otherwise
+				  double logalpha = (gamma_m[1] - gamma_m[0])*log(m(popid,0)/m(popid,1));
 				  // Hastings ratio equals 1 because proposal is symmetric
 				  // Likelihood ratio
 				  double newloglik = known_source_loglik(A, b, M_prop, R);
@@ -358,7 +358,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
       	  NumericMatrix M_prop = normalise_rows(m_prop);
       	  // Prior-Hastings ratio
       	  double logalpha = m(popid,id) - m_prop(popid,id);
-      	  logalpha += beta * log(m_prop(popid,id)/m(popid,id));
+      	  logalpha += gamma_m[id] * log(m_prop(popid,id)/m(popid,id));
       	  // Likelihood ratio
       	  double newloglik = known_source_loglik(A, b, M_prop, R);
 
@@ -382,7 +382,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					NumericMatrix R_prop(clone(R));
 					R_prop(popid,_) = normalise(rr_prop);
 					// prior is gamma, so we have log(prod(dgamma(rev(x), r, rate=1))/prod(dgamma(x, r, rate=1)))
-					double logalpha = (gamma_[1] - gamma_[0])*log(rr[0]/rr[1]);
+					double logalpha = (gamma_r[1] - gamma_r[0])*log(rr[0]/rr[1]);
 					// Symmetric proposal (swap)
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, M, R_prop);
@@ -408,7 +408,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					R_prop(popid,_) = normalise(rr_prop);
 					// Prior-Hastings ratio
 					double logalpha = rr[id] - rr_prop[id];
-					logalpha += gamma_[id] * log(rr_prop[id]/rr[id]);
+					logalpha += gamma_r[id] * log(rr_prop[id]/rr[id]);
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, M, R_prop);
 
