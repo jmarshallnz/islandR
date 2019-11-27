@@ -20,5 +20,6 @@ List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector 
   List out;
   out["hum_lik"] = island.human_likelihoods;
   out["evolution"] = island.evolution_traces;
+  out["accept"] = island.accept;
   return out;
 }

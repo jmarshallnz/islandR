@@ -31,6 +31,7 @@ class Island {
 public:
   // output stuff
   Rcpp::NumericMatrix evolution_traces;
+  Rcpp::NumericMatrix accept;
   Rcpp::List human_likelihoods;
 
   Island() {

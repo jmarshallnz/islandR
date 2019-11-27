@@ -250,6 +250,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 //	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 //	Rcout << "Done 0 of " << niter << " iterations";
 
+  accept = NumericMatrix(6,2);
+
 	for (int iter = 0; iter < (samples+burnin)*thin; iter++) {
 		if ((iter+1) % thin == 0 && iter/thin >= burnin) {
 
@@ -296,8 +298,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
+						accept(0,0)++;
 					}
 					else { // reject
+					  accept(0,1)++;
 					}
 					break;
 				}
@@ -321,8 +325,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
+						accept(1,0)++;
 					}
 					else { // reject
+					  accept(1,1)++;
 					}
 					break;
 				}
@@ -344,8 +350,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 				    m(popid,_) = m_prop(popid,_);
 				    M(popid,_) = M_prop(popid,_);
 				    loglikelihood = newloglik;
+				    accept(2,0)++;
 				  }
 				  else { // reject
+				    accept(2,1)++;
 				  }
 				  break;
 				}
@@ -367,8 +375,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
       	    m(popid,_) = m_prop(popid,_);
       	    M(popid,_) = M_prop(popid,_);
       	    loglikelihood = newloglik;
+      	    accept(3,0)++;
       	  }
       	  else { // reject
+      	    accept(3,1)++;
       	  }
       	  break;
 			  }
@@ -392,8 +402,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 						rr = rr_prop;
 						R(popid,_) = R_prop(popid,_);
 						loglikelihood = newloglik;
+						accept(4,0)++;
 					}
 					else { // reject
+					  accept(4,1)++;
 					}
 					break;
 				}
@@ -417,8 +429,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const Numer
 						rr = rr_prop;
 						R(popid, _) = R_prop(popid, _);
 						loglikelihood = newloglik;
+						accept(5,0)++;
 					}
 					else { // reject
+					  accept(5,1)++;
 					}
 					break;
 				}

@@ -119,13 +119,23 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
                                paste0("R", 1:length(source_names)),
                                "Likelihood")
 
+  # assign names to the acceptance rates
+  colnames(out$accept) <- c("Accept", "Reject")
+  move_types <- c("A swap", "A rw", "M swap", "M rw", "R swap", "R rw")
+
   # righto, now construct a useful object...
   sequences = type.frame[,-c(1,ncol(type.frame))]
   # convert our sequences back
   x <- lapply(sequence_cols, function(col) { allele.map[[col]][ sequences[[col]] ] } )
   sequences[sequence_cols] <- x
 
-  x = list(types = type.frame$Type, sequences = sequences, sources = source_names, sampling_distribution = simplify2array(hum_lik), evolution_params = data.frame(out$evolution[-1,]), model = "island")
+  x = list(types = type.frame$Type,
+           sequences = sequences,
+           sources = source_names,
+           sampling_distribution = simplify2array(hum_lik),
+           evolution_params = data.frame(out$evolution[-1,]),
+           acceptance = data.frame(Type = move_types, out$accept),
+           model = "island")
   class(x) = c("island", "sample_dist")
   x
 }
