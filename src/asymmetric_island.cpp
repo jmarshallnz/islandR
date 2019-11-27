@@ -238,8 +238,6 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 //	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
 //	Rcout << "Done 0 of " << niter << " iterations";
 
-  NumericMatrix accept(6,2);
-
 	for (int iter = 0; iter < (samples+burnin)*thin; iter++) {
 		if ((iter+1) % thin == 0 && iter/thin >= burnin) {
 
@@ -288,10 +286,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
-						accept(0,0)++;
 					}
 					else { // reject
-					  accept(0,1)++;
 					}
 					break;
 				}
@@ -318,10 +314,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
-						accept(1,0)++;
 					}
 					else { // reject
-					  accept(1,1)++;
 					}
 					break;
 				}
@@ -345,10 +339,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 						rr = rr_prop;
 						R(popid,_) = R_prop(popid,_);
 						loglikelihood = newloglik;
-						accept(4,0)++;
 					}
 					else { // reject
-					  accept(4,1)++;
 					}
 					break;
 				}
@@ -372,10 +364,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 						rr = rr_prop;
 						R(popid, _) = R_prop(popid, _);
 						loglikelihood = newloglik;
-						accept(5,0)++;
 					}
 					else { // reject
-					  accept(5,1)++;
 					}
 					break;
 				}
@@ -394,9 +384,6 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 //			next = current + (clock_t)CLOCKS_PER_SEC;
 //		}
 	}
-	Rcout << "Acceptance Rates:" << std::endl;
-	for (int i = 0; i < accept.nrow(); i++)
-    Rcout << "Move " << i << " accepts " << accept(i,0) << " rejects " << accept(i,1) << " rate " << accept(i,0)/sum(accept(i,_)) << std::endl;
 	Rcout << std::endl;
 }
 
