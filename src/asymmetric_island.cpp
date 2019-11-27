@@ -209,7 +209,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	NumericMatrix A = normalise_rows(a);
 	NumericArray3 b = calc_b(A);
 
-	NumericMatrix m_X = NumericMatrix::diag(ng, 1);
+	NumericMatrix m_X(ng, 1);
+	m_X(_,0) = rep(1,ng);
 
 	NumericMatrix m(m_X.ncol(),2);	///< Reparameterised mutation rates
 	for (int i = 0; i < m.nrow(); i++) {
