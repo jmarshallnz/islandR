@@ -10,16 +10,16 @@
 using namespace Rcpp;
 
 /* Computes the log likelihood of ST j in source i */
-logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
-  double punique = A(i,ng);
+logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &M, const NumericMatrix &R) {
+  double punique = M(i,0);
   std::vector<double> psame(nloc);
   std::vector<double> pdiff(nloc);
   for (int l = 0; l < nloc; l++) {
     int allele = MLST[i](j, l);
     double ac = acount[i][l][allele];
     double ac_ = (ac*(double)size[i]-1.0)/(double)(size[i]-1);
-    double bk = b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_;
-    double b_ = R(i,0) * bk + R(i,1) * (1.0-A(i,ng));// if no rec then must be same as CF (barring mutation)
+    double bk = M(i,1) * (b[i][l][allele] - A(i,i)*ac + A(i,i)*ac_);
+    double b_ = R(i,0) * bk + R(i,1) * M(i,1);// if no rec then must be same as CF (barring mutation)
     if(fabs(b_)<1.0e-7) {
       b_ = 0.0;
     }
@@ -33,7 +33,7 @@ logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, c
   }
   std::vector<logdouble> l_j(ng);
   for (int ii = 0; ii < ng; ii++) {						//	Cycle through source of the clonal frame
-    double mii = A(i,ii)/(1.0-A(i,ng));
+    double mii = A(i,ii);
     std::vector<logdouble> l_ii(nST[ii]);      // allocate the vector
     for (int jj = 0; jj < nST[ii]; jj++) {				//	Cycle through each ST from that source
       double ncopiesjj = (i==ii && j==jj) ? ABUN[ii][jj]-std::min(ABUN[ii][jj],1.0)
@@ -59,32 +59,32 @@ logdouble Island::known_source_loglik_ij(int i, int j, const NumericMatrix &A, c
   return sum(l_j);
 }
 
-double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::known_source_loglik(const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &M, const NumericMatrix &R) {
 	logdouble lik = 1.0;
 	/* Cycle through each unique ST in each group, taking account of abundance of the STs */
 	for (int i = 0; i < ng; i++) {
 		for (int j = 0; j < nST[i]; j++) {
 		  double ncopiesj = ABUN[i][j];
-		  logdouble l_ij = known_source_loglik_ij(i,j, A, b, R);
+		  logdouble l_ij = known_source_loglik_ij(i,j, A, b, M, R);
 		  lik *= l_ij^ncopiesj;
 		}
 	}
 	return lik.log();
 }
 
-double Island::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &R) {
+double Island::likHi6(const int id, const int i, const NumericMatrix &A, const NumericArray3 &b, const NumericMatrix &M, const NumericMatrix &R) {
 	std::vector<double> pdiff(nloc);
 	std::vector<double> psame(nloc);
 
-	double puniq = A(i,ng); // mutation rate
+	double punique = M(i,0);
 	for (int l = 0; l < nloc; l++) {
 		int human_allele = human(id, l);
-		pdiff[l] = std::max(R(i,0) * b[i][l][human_allele],0.0);
-		psame[l] = std::max(R(i,0) * b[i][l][human_allele] + R(i,1) * (1.0-A(i,ng)),0.0);
+		pdiff[l] = std::max(M(i,1)*R(i,0) * b[i][l][human_allele],0.0);
+		psame[l] = std::max(M(i,1)*R(i,0) * b[i][l][human_allele] + R(i,1) * M(i,1),0.0);
 	}
 	double lik = 0.0;
 	for (int ii = 0; ii < ng; ii++) {								// Cycle through source of the clonal frame
-		double mii = A(i,ii)/(1.0-A(i,ng));
+		double mii = A(i,ii);
 		double l_ii = 0.0;
 		for (int jj = 0; jj <nST[ii]; jj++) {
 			double l_jj = mii;						//	Cycle through each ST from that source
@@ -92,7 +92,7 @@ double Island::likHi6(const int id, const int i, const NumericMatrix &A, const N
 			bool* SAME = same[id][ii][jj];
 			for(int l=0; l<nloc; l++, SAME++) {
 				if (HUMAN_UNIQUE[l]) {						// new allele (allow some rounding error)
-					l_jj *= puniq;
+					l_jj *= punique;
 				}
 				else if(*SAME) {						// previously observed and same as CF
 					l_jj *= psame[l];
@@ -175,7 +175,7 @@ void Island::precalc() {
 	}
 }
 
-void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, NumericMatrix &traces, int trace_row) {
+void append_traces(int iter, NumericMatrix &A, NumericMatrix &M, NumericMatrix &R, double lik, NumericMatrix &traces, int trace_row) {
   int col = 0;
   if (trace_row >= traces.nrow())
     return;
@@ -185,54 +185,66 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &R, double lik, Num
     for (int j = 0; j < A.ncol(); j++)
       row[col++] = A(i,j);
   }
+  for (int i = 0; i < M.nrow(); i++)
+    row[col++] = M(i,0);
   for (int i = 0; i < R.nrow(); i++)
     row[col++] = R(i,0);
   row[col++] = lik;
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int samples, const int burnin, const int thin) {
+void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const NumericVector &gamma_r, const int samples, const int burnin, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */
   RNGScope scope;
 
 	/* Initialize the Markov chain */
-	NumericMatrix a(ng,ng+1);		///<	Reparametrised migration matrix. a[,ng]=mutation rate
-	NumericMatrix A(ng,ng+1);		///<	Migration matrix M, M[ng] = mutation rates?
+	NumericMatrix a(ng,ng);		///<	Reparametrised migration matrix.
 	for (int i = 0; i < ng; i++) {
-	  a(i,_) = rgamma(ng+1, beta, 1.0);
-	}
-	calc_A(a, A);	///< Does transformation to M
-	NumericArray3 b = calc_b(A);
-
-	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
-	NumericMatrix R(ng,2);  ///< R[grp,1:2] = r[grp,1:2]/sum(r[grp,1:2])
-	for (int i = 0; i < ng; i++) {
-	  for (int j = 0; j < 2; j++) {
-		  r(i,j) = R::rgamma(gamma_[j], 1.0);
+	  for (int j = 0; j < ng; j++) {
+	    a(i,j) = R::rgamma(beta, 1.0);
 	  }
 	}
-	calc_R(r, R);
+	NumericMatrix A = normalise_rows(a);
+	NumericArray3 b = calc_b(A);
+
+	NumericMatrix m(ng,2);	///< Reparameterised per-group mutation rates
+	for (int i = 0; i < ng; i++) {
+	  for (int j = 0; j < 2; j++) {
+	    m(i,j) = R::rgamma(gamma_m[j], 1.0);
+	  }
+	}
+	NumericMatrix M = normalise_rows(m);
+
+	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
+	for (int i = 0; i < ng; i++) {
+	  for (int j = 0; j < 2; j++) {
+	    r(i,j) = R::rgamma(gamma_r[j], 1.0);
+	  }
+	}
+	NumericMatrix R = normalise_rows(r);
 
 	/* Storage for likelihoods */
-	double loglikelihood = known_source_loglik(A, b, R);
+	double loglikelihood = known_source_loglik(A, b, M, R);
 
 	/* Proposal probabilities */
 	NumericVector proprob = NumericVector::create(42./5.,   //	Update A: switching proposal
                                                 42.,      //	Update A: log-normal proposal
-                                                0.0, 0.0,
+                                                12./5,    //  Update M: switching proposal
+                                                12.,      //  Update M: log-normal proposal
                                                 12./5.,   //	Update r: switching proposal
                                                 12.);     //	Update r: log-normal proposal
   proprob = proprob / sum(proprob);
 
 	double sigma_a = 0.5;							//	factor for normal proposal in MH change of a (case 1)
+	double sigma_m = 0.5;					  	//	factor for normal proposal in MH change of m (case 3)
 	double sigma_r = 0.5;							//	factor for normal proposal in MH change of r (case 5)
 
 	/* Trace output matrix */
-	evolution_traces = NumericMatrix(samples+1, 1+ng*(ng+1)+ng+1); // iter, A, r, loglik
+	evolution_traces = NumericMatrix(samples+1, 1+ng*ng+ng+ng+1); // iter, A, M, R, loglik
 	int trace_row = 0;
-	append_traces(0, A, R, loglikelihood, evolution_traces, trace_row++);
+	append_traces(0, A, M, R, loglikelihood, evolution_traces, trace_row++);
 
 //	clock_t start = clock(), current;
 //	clock_t next = start + (clock_t)CLOCKS_PER_SEC;
@@ -251,7 +263,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 		  for(int h = 0; h < human.nrow(); h++) {
         // calculate the likelihood
         for (int j = 0; j < ng; j++) {
-          phi(h,j) = likHi6(h, j, A, b, R);
+          phi(h,j) = likHi6(h, j, A, b, M, R);
         }
 		  }
 
@@ -263,26 +275,24 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 			switch(move) {
 				case 0:	{// update A: switching proposal
 					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
-					int id1 = sample(ng+1);		// Principal elements of mig matrix to change
-					int id2 = sample(ng);
-					if(id2==id1) id2 = ng;
+					int id1 = sample(ng);		// Principal elements of mig matrix to change
+					int id2 = sample(ng-1);
+					if(id2==id1) id2 = ng-1;
 					// Need only update one row of a
-					NumericMatrix::Row ar = a(popid,_);
-					NumericVector ar_prop = ar;
-					ar_prop[id1] = ar[id2];
-					ar_prop[id2] = ar[id1];
-					NumericMatrix A_prop(clone(A));
-					A_prop(popid,_) = normalise(ar_prop);
+					NumericMatrix a_prop(clone(a));
+					a_prop(popid,id1) = a(popid,id2);
+					a_prop(popid,id2) = a(popid,id1);
+					NumericMatrix A_prop = normalise_rows(a_prop);
 					double logalpha = 0.0;
 					// Prior ratio equals 1 because prior is symmetric
 					// Hastings ratio equals 1 because proposal is symmetric
 					// Likelihood ratio
 					NumericArray3 b_prop = calc_b(A_prop);
-					double newloglik = known_source_loglik(A_prop, b_prop, R);
+					double newloglik = known_source_loglik(A_prop, b_prop, M, R);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-						ar = ar_prop;
+						a(popid,_) = a_prop(popid,_);
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
@@ -293,24 +303,21 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 				}
 				case 1:	{// update A: log-normal proposal
 					int popid = sample(ng);	// Choose the source for which to change the "mig" matrix
-					int id = sample(ng+1);		// Principal element of mig matrix to change
+					int id = sample(ng);		// Principal element of mig matrix to change
 					// Need only update one row of a
-					NumericMatrix::Row ar = a(popid,_);
-					NumericVector ar_prop = ar;
-					ar_prop[id] = R::rlnorm(log(ar[id]), sigma_a);
-
-					NumericMatrix A_prop(clone(A));
-					A_prop(popid,_) = normalise(ar_prop);
+					NumericMatrix a_prop(clone(a));
+					a_prop(popid,id) = R::rlnorm(log(a(popid,id)), sigma_a);
+					NumericMatrix A_prop = normalise_rows(a_prop);
 					// Prior-Hastings ratio
-					double logalpha = ar[id] - ar_prop[id];
-					logalpha += beta * log(ar_prop[id]/ar[id]);
+					double logalpha = a(popid,id) - a_prop(popid,id);
+					logalpha += beta * log(a_prop(popid,id)/a(popid,id));
 					// Likelihood ratio
 					NumericArray3 b_prop = calc_b(A_prop);
-					double newloglik = known_source_loglik(A_prop, b_prop, R);
+					double newloglik = known_source_loglik(A_prop, b_prop, M, R);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-						ar = ar_prop;
+					  a(popid,_) = a_prop(popid,_);
 					  A(popid,_) = A_prop(popid,_);
 					  b  = b_prop;
 						loglikelihood = newloglik;
@@ -319,6 +326,52 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					}
 					break;
 				}
+			  case 2: { // update M (switching move)
+				  int popid = sample(ng);	// Choose the source for which to change the mutation matrix
+				  // Need only update one row of a
+				  NumericMatrix m_prop(clone(m));
+				  m_prop(popid, 0) = m(popid, 1);
+				  m_prop(popid, 1) = m(popid, 0);
+				  NumericMatrix M_prop = normalise_rows(m_prop);
+				  // Prior ratio equals 1 if gamma prior is symmetric, otherwise
+				  double logalpha = (gamma_m[1] - gamma_m[0])*log(m(popid,0)/m(popid,1));
+				  // Hastings ratio equals 1 because proposal is symmetric
+				  // Likelihood ratio
+				  double newloglik = known_source_loglik(A, b, M_prop, R);
+
+				  logalpha += newloglik - loglikelihood;
+				  if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
+				    m(popid,_) = m_prop(popid,_);
+				    M(popid,_) = M_prop(popid,_);
+				    loglikelihood = newloglik;
+				  }
+				  else { // reject
+				  }
+				  break;
+				}
+			  case 3: { // update M (log normal random walk)
+      	  int popid = sample(ng);	// Choose the source for which to change the mutation matrix
+      	  int id = sample(2);	    // Principal element of mig matrix to change
+      	  // Need only update one row of m
+      	  NumericMatrix m_prop(clone(m));
+      	  m_prop(popid,id) = R::rlnorm(log(m(popid,id)), sigma_m);
+      	  NumericMatrix M_prop = normalise_rows(m_prop);
+      	  // Prior-Hastings ratio
+      	  double logalpha = m(popid,id) - m_prop(popid,id);
+      	  logalpha += gamma_m[id] * log(m_prop(popid,id)/m(popid,id));
+      	  // Likelihood ratio
+      	  double newloglik = known_source_loglik(A, b, M_prop, R);
+
+      	  logalpha += newloglik - loglikelihood;
+      	  if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
+      	    m(popid,_) = m_prop(popid,_);
+      	    M(popid,_) = M_prop(popid,_);
+      	    loglikelihood = newloglik;
+      	  }
+      	  else { // reject
+      	  }
+      	  break;
+			  }
 				case 4: {// update r (switching move)
 					int popid = sample(ng);
 				  // Need only update one row of r
@@ -329,10 +382,10 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					NumericMatrix R_prop(clone(R));
 					R_prop(popid,_) = normalise(rr_prop);
 					// prior is gamma, so we have log(prod(dgamma(rev(x), r, rate=1))/prod(dgamma(x, r, rate=1)))
-					double logalpha = (gamma_[1] - gamma_[0])*log(rr[0]/rr[1]);
+					double logalpha = (gamma_r[1] - gamma_r[0])*log(rr[0]/rr[1]);
 					// Symmetric proposal (swap)
 					// Likelihood ratio
-					double newloglik = known_source_loglik(A, b, R_prop);
+					double newloglik = known_source_loglik(A, b, M, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
@@ -355,9 +408,9 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					R_prop(popid,_) = normalise(rr_prop);
 					// Prior-Hastings ratio
 					double logalpha = rr[id] - rr_prop[id];
-					logalpha += gamma_[id] * log(rr_prop[id]/rr[id]);
+					logalpha += gamma_r[id] * log(rr_prop[id]/rr[id]);
 					// Likelihood ratio
-					double newloglik = known_source_loglik(A, b, R_prop);
+					double newloglik = known_source_loglik(A, b, M, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
@@ -377,7 +430,7 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 
 		/* output thinned traces of island model fit */
 		if((iter+1)%thin==0 && iter/thin >= burnin)
-		  append_traces(iter+1, A, R, loglikelihood, evolution_traces, trace_row++);
+		  append_traces(iter+1, A, M, R, loglikelihood, evolution_traces, trace_row++);
 
 //		if((current=clock())>next) {
 //		  Rcout << "\rDone " << (iter+1) << " of " << niter+burnin << " iterations in " << (double)(current-start)/CLOCKS_PER_SEC << " s " << std::flush;
@@ -389,22 +442,16 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 
 // helper stuff below here
 
-// Assumes A is correctly sized
-void Island::calc_A(NumericMatrix &a, NumericMatrix &A) {
-  for (int i = 0; i < a.nrow(); i++) {
-    A(i,_) = normalise(a(i,_));
-  }
-}
-
-// Assumes R is correctly sized
-void Island::calc_R(NumericMatrix &r, NumericMatrix &R) {
-  for (int i = 0; i < r.nrow(); i++) {
-    R(i,_) = normalise(r(i,_));
-  }
-}
-
 NumericVector Island::normalise(const NumericVector &x) {
   return x / sum(x);
+}
+
+NumericMatrix Island::normalise_rows(const NumericMatrix &x) {
+  NumericMatrix X = no_init(x.nrow(), x.ncol());
+  for (int i = 0; i < x.nrow(); i++) {
+    X(i,_) = normalise(x(i,_));
+  }
+  return X;
 }
 
 Island::NumericArray3 Island::calc_b(const NumericMatrix &A) {

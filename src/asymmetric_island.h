@@ -42,7 +42,7 @@ public:
   void initialise(Rcpp::IntegerMatrix isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, sampling nsamples after nburnin samples, with given thinning
-	void mcmc6f(const double beta, const Rcpp::NumericVector &gamma_, const int samples, const int burnin, const int thin);
+	void mcmc6f(const double beta, const Rcpp::NumericVector &gamma_m, const Rcpp::NumericVector &gamma_r, const int samples, const int burnin, const int thin);
 
 	~Island() {
 		/* free memory */
@@ -75,14 +75,13 @@ public:
 	int multinom(const Rcpp::NumericVector &p);
 	int sample(int n);
 
-	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
-	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
-	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &R);
+	double likHi6(const int id, const int i, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
+	double known_source_loglik(const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
+	logdouble known_source_loglik_ij(int i, int j, const Rcpp::NumericMatrix &A, const NumericArray3 &b, const Rcpp::NumericMatrix &M, const Rcpp::NumericMatrix &R);
 
 	NumericArray3 calc_b(const Rcpp::NumericMatrix &A);
-	void calc_A(Rcpp::NumericMatrix &a, Rcpp::NumericMatrix &A);
-	void calc_R(Rcpp::NumericMatrix &r, Rcpp::NumericMatrix &R);
 	Rcpp::NumericVector normalise(const Rcpp::NumericVector &x);
+	Rcpp::NumericMatrix normalise_rows(const Rcpp::NumericMatrix &x);
 	void precalc();
 };
 

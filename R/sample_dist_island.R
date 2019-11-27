@@ -17,17 +17,20 @@ NULL
 #' @param samples the number of samples required from the posterior after burnin. Defaults to 100.
 #' @param burnin  the number of samples to discard for burnin. Defaults to 10.
 #' @param thin    the number of iterations per sample taken. Defaults to 100.
-#' @param priors - a list of priors for the fit. Defaults to 1,c(1,1).
+#' @param priors - a list of priors for the fit. Defaults to 1,c(1,1),c(1,1).
 #' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class island which derives from sampling_dist.
 #' @seealso \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
-st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 100, burnin = 10, thin = 100, priors = list(migration=1,recombination=c(1,1)), data) {
+st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 100, burnin = 10, thin = 100, priors = list(migration=1,mutation=c(1,1),recombination=c(1,1)), data) {
   mod.terms = terms(formula, data=data)
   mod.frame = model.frame(formula, data=data)
   allele.frame = model.frame(sequences, data=data)
 
   if (length(priors$recombination) != 2) {
     stop("Beta prior on priors$recombination must be length 2")
+  }
+  if (length(priors$mutation) != 2) {
+    stop("Beta prior on priors$mutation must be length 2")
   }
 
   if (attr(mod.terms, "response") == 0)
@@ -90,7 +93,13 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
   island.mat = as.matrix(rbind(source.frame, type.frame))
 
   # run the island model
-  out = island(island.mat, beta_migration = priors$migration, gamma_recombination = priors$recombination, samples = samples, burnin = burnin, thin = thin)
+  out = island(island.mat,
+               beta_migration = priors$migration,
+               gamma_mutation = priors$mutation,
+               gamma_recombination = priors$recombination,
+               samples = samples,
+               burnin = burnin,
+               thin = thin)
 
   # now regenerate useful summary information... (in future assign names in C++ land?) Also
   # need to change output in C++ land so it gives all types rather than duplicates and only
@@ -105,7 +114,8 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
 
   # assign names to the evolution traces
   colnames(out$evolution) <- c("Iteration",
-                               apply(as.matrix(expand.grid("A",1:(length(source_names)+1),1:length(source_names)))[,c(1,3,2)], 1, paste0, collapse=""),
+                               apply(as.matrix(expand.grid("A",1:length(source_names),1:length(source_names)))[,c(1,3,2)], 1, paste0, collapse=""),
+                               paste0("M", 1:length(source_names)),
                                paste0("R", 1:length(source_names)),
                                "Likelihood")
 
