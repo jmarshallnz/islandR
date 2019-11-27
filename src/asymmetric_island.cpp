@@ -209,21 +209,25 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 	NumericMatrix A = normalise_rows(a);
 	NumericArray3 b = calc_b(A);
 
-	NumericMatrix m(ng,2);	///< Reparameterised per-group mutation rates
-	for (int i = 0; i < ng; i++) {
+	NumericMatrix m_X = NumericMatrix::diag(ng, 1);
+
+	NumericMatrix m(m_X.ncol(),2);	///< Reparameterised mutation rates
+	for (int i = 0; i < m.nrow(); i++) {
 	  for (int j = 0; j < 2; j++) {
 	    m(i,j) = R::rgamma(beta, 1.0);
 	  }
 	}
-	NumericMatrix M = normalise_rows(m);
+	NumericMatrix M = normalise_product(m_X, m);
 
-	NumericMatrix r(ng,2);	///< Reparameterised per-group recombination rates
-	for (int i = 0; i < ng; i++) {
+	NumericMatrix r_X = NumericMatrix::diag(ng, 1);
+
+	NumericMatrix r(r_X.ncol(),2);	///< Reparameterised recombination rates
+	for (int i = 0; i < r.nrow(); i++) {
 	  for (int j = 0; j < 2; j++) {
 		  r(i,j) = R::rgamma(gamma_[j], 1.0);
 	  }
 	}
-	NumericMatrix R = normalise_rows(r);
+	NumericMatrix R = normalise_product(r_X, r);
 
 	/* Storage for likelihoods */
 	double loglikelihood = known_source_loglik(A, b, M, R);
@@ -333,12 +337,12 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					break;
 				}
 			  case 2: { // update M (switching move)
-				  int popid = sample(ng);	// Choose the source for which to change the mutation matrix
-				  // Need only update one row of a
+				  int rowid = sample(m.nrow());	// Choose the source for which to change the mutation matrix
+				  // Need only update one row of m
 				  NumericMatrix m_prop(clone(m));
-				  m_prop(popid, 0) = m(popid, 1);
-				  m_prop(popid, 1) = m(popid, 0);
-				  NumericMatrix M_prop = normalise_rows(m_prop);
+				  m_prop(rowid, 0) = m(rowid, 1);
+				  m_prop(rowid, 1) = m(rowid, 0);
+				  NumericMatrix M_prop = normalise_product(m_X, m_prop);
 				  double logalpha = 0.0;
 				  // Prior ratio equals 1 because prior is symmetric
 				  // Hastings ratio equals 1 because proposal is symmetric
@@ -347,8 +351,8 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 
 				  logalpha += newloglik - loglikelihood;
 				  if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-				    m(popid,_) = m_prop(popid,_);
-				    M(popid,_) = M_prop(popid,_);
+				    m(rowid,_) = m_prop(rowid,_);
+				    M = M_prop;
 				    loglikelihood = newloglik;
 				    accept(2,0)++;
 				  }
@@ -358,22 +362,22 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 				  break;
 				}
 			  case 3: { // update M (log normal random walk)
-      	  int popid = sample(ng);	// Choose the source for which to change the mutation matrix
+      	  int rowid = sample(m.nrow());	// Choose the source for which to change the mutation matrix
       	  int id = sample(2);	    // Principal element of mig matrix to change
       	  // Need only update one row of m
       	  NumericMatrix m_prop(clone(m));
-      	  m_prop(popid,id) = R::rlnorm(log(m(popid,id)), sigma_m);
-      	  NumericMatrix M_prop = normalise_rows(m_prop);
+      	  m_prop(rowid,id) = R::rlnorm(log(m(rowid,id)), sigma_m);
+      	  NumericMatrix M_prop = normalise_product(m_X, m_prop);
       	  // Prior-Hastings ratio
-      	  double logalpha = m(popid,id) - m_prop(popid,id);
-      	  logalpha += beta * log(m_prop(popid,id)/m(popid,id));
+      	  double logalpha = m(rowid,id) - m_prop(rowid,id);
+      	  logalpha += beta * log(m_prop(rowid,id)/m(rowid,id));
       	  // Likelihood ratio
       	  double newloglik = known_source_loglik(A, b, M_prop, R);
 
       	  logalpha += newloglik - loglikelihood;
       	  if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-      	    m(popid,_) = m_prop(popid,_);
-      	    M(popid,_) = M_prop(popid,_);
+      	    m(rowid,_) = m_prop(rowid,_);
+      	    M = M_prop;
       	    loglikelihood = newloglik;
       	    accept(3,0)++;
       	  }
@@ -383,25 +387,24 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
       	  break;
 			  }
 				case 4: {// update r (switching move)
-					int popid = sample(ng);
+					int rowid = sample(r.nrow());
 				  // Need only update one row of r
-				  NumericMatrix::Row rr = r(popid,_);
-				  NumericVector rr_prop = rr;
-					rr_prop[0] = rr[1];
-					rr_prop[1] = rr[0];
-					NumericMatrix R_prop(clone(R));
-					R_prop(popid,_) = normalise(rr_prop);
+				  NumericMatrix r_prop(clone(r));
+				  r_prop(rowid, 0) = r(rowid, 1);
+				  r_prop(rowid, 1) = r(rowid, 0);
+				  NumericMatrix R_prop = normalise_product(r_X, r_prop);
+
 					// prior is gamma, so we have log(prod(dgamma(rev(x), r, rate=1))/prod(dgamma(x, r, rate=1)))
-					double logalpha = (gamma_[1] - gamma_[0])*log(rr[0]/rr[1]);
+					double logalpha = (gamma_[1] - gamma_[0])*log(r(rowid,0)/r(rowid,1));
 					// Symmetric proposal (swap)
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, M, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-						rr = rr_prop;
-						R(popid,_) = R_prop(popid,_);
-						loglikelihood = newloglik;
+					  r(rowid,_) = r_prop(rowid,_);
+					  R = R_prop;
+					  loglikelihood = newloglik;
 						accept(4,0)++;
 					}
 					else { // reject
@@ -410,24 +413,22 @@ void Island::mcmc6f(const double beta, const NumericVector &gamma_, const int sa
 					break;
 				}
 				case 5:	{// update r (log-normal move)
-					int popid = sample(ng);	// Choose the source for which to change the "rec" parameter
+					int rowid = sample(r.nrow());	// Choose the source for which to change the "rec" parameter
 					int id = sample(2);			// Change one or other of the gamma components
 					// Need only update one row of r
-					NumericMatrix::Row rr = r(popid,_);
-					NumericVector rr_prop = rr;
-					rr_prop[id] = R::rlnorm(log(rr[id]), sigma_r);
-					NumericMatrix R_prop = clone(R);
-					R_prop(popid,_) = normalise(rr_prop);
+					NumericMatrix r_prop(clone(r));
+					r_prop(rowid,id) = R::rlnorm(log(r(rowid,id)), sigma_r);
+					NumericMatrix R_prop = normalise_product(r_X, r_prop);
 					// Prior-Hastings ratio
-					double logalpha = rr[id] - rr_prop[id];
-					logalpha += gamma_[id] * log(rr_prop[id]/rr[id]);
+					double logalpha = r(rowid,id) - r_prop(rowid,id);
+					logalpha += gamma_[id] * log(r_prop(rowid,id)/r(rowid,id));
 					// Likelihood ratio
 					double newloglik = known_source_loglik(A, b, M, R_prop);
 
 					logalpha += newloglik - loglikelihood;
 					if (logalpha >= 0.0 || R::runif(0, 1) < exp(logalpha)) {	// accept
-						rr = rr_prop;
-						R(popid, _) = R_prop(popid, _);
+					  r(rowid,_) = r_prop(rowid,_);
+						R = R_prop;
 						loglikelihood = newloglik;
 						accept(5,0)++;
 					}
@@ -467,6 +468,17 @@ NumericMatrix Island::normalise_rows(const NumericMatrix &x) {
   NumericMatrix X = no_init(x.nrow(), x.ncol());
   for (int i = 0; i < x.nrow(); i++) {
     X(i,_) = normalise(x(i,_));
+  }
+  return X;
+}
+
+NumericMatrix Island::normalise_product(const NumericMatrix &x, const NumericMatrix &y) {
+  NumericMatrix X = no_init(x.nrow(), y.ncol());
+  for (int i = 0; i < x.nrow(); i++) {
+    for (int j = 0; j < y.ncol(); j++) {
+      X(i,j) = sum(x(i,_) * y(_,j));
+    }
+    X(i,_) = normalise(X(i,_));
   }
   return X;
 }
