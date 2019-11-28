@@ -193,7 +193,12 @@ void append_traces(int iter, NumericMatrix &A, NumericMatrix &M, NumericMatrix &
 }
 
 /* This version uses the clonal frame version of the likelihood */
-void Island::mcmc6f(const double beta, const NumericVector &gamma_m, const NumericVector &gamma_r, const int samples, const int burnin, const int thin) {
+void Island::mcmc6f(const double beta,
+                    const NumericVector &gamma_m,
+                    const NumericVector &gamma_r,
+                    const NumericMatrix &X_m,
+                    const NumericMatrix &X_r,
+                    const int samples, const int burnin, const int thin) {
 	precalc();
 
   /* Initialize the random number generator */

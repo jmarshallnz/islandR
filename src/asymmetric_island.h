@@ -43,7 +43,12 @@ public:
   void initialise(Rcpp::IntegerMatrix isolates);
 
 	// mcmc6f infers M and R from seqs of known origin, sampling nsamples after nburnin samples, with given thinning
-	void mcmc6f(const double beta, const Rcpp::NumericVector &gamma_m, const Rcpp::NumericVector &gamma_r, const int samples, const int burnin, const int thin);
+	void mcmc6f(const double beta,
+             const Rcpp::NumericVector &gamma_m,
+             const Rcpp::NumericVector &gamma_r,
+             const Rcpp::NumericMatrix &X_m,
+             const Rcpp::NumericMatrix &X_r,
+             const int samples, const int burnin, const int thin);
 
 	~Island() {
 		/* free memory */

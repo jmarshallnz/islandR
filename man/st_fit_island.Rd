@@ -6,7 +6,8 @@
 \usage{
 st_fit_island(formula, sequences, non_primary = "Human", samples = 100,
   burnin = 10, thin = 100, priors = list(migration = 1, mutation =
-  c(1, 1), recombination = c(1, 1)), data)
+  c(1, 1), recombination = c(1, 1)), control = list(mutation = "source",
+  recombination = "source"), data)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}
@@ -23,6 +24,9 @@ but P(ST | source) will be computed for these STs in addition to those observed 
 \item{thin}{the number of iterations per sample taken. Defaults to 100.}
 
 \item{priors}{- a list of priors for the fit. Defaults to 1,c(1,1),c(1,1).}
+
+\item{control}{- a list of model control information. Defaults to mutation="source", recombination="source". Specify "constant" for
+a single probability across all sources.}
 
 \item{data}{optional data frame from which to take variables in \code{formula} and \code{sequence}.}
 }

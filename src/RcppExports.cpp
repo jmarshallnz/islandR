@@ -19,8 +19,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // island
-List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_mutation, NumericVector gamma_recombination, int samples, int burnin, int thin);
-RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP beta_migrationSEXP, SEXP gamma_mutationSEXP, SEXP gamma_recombinationSEXP, SEXP samplesSEXP, SEXP burninSEXP, SEXP thinSEXP) {
+List island(IntegerMatrix isolates, NumericVector beta_migration, NumericVector gamma_mutation, NumericVector gamma_recombination, NumericMatrix X_mutation, NumericMatrix X_recombination, int samples, int burnin, int thin);
+RcppExport SEXP _islandR_island(SEXP isolatesSEXP, SEXP beta_migrationSEXP, SEXP gamma_mutationSEXP, SEXP gamma_recombinationSEXP, SEXP X_mutationSEXP, SEXP X_recombinationSEXP, SEXP samplesSEXP, SEXP burninSEXP, SEXP thinSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,17 +28,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type beta_migration(beta_migrationSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type gamma_mutation(gamma_mutationSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type gamma_recombination(gamma_recombinationSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_mutation(X_mutationSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_recombination(X_recombinationSEXP);
     Rcpp::traits::input_parameter< int >::type samples(samplesSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type thin(thinSEXP);
-    rcpp_result_gen = Rcpp::wrap(island(isolates, beta_migration, gamma_mutation, gamma_recombination, samples, burnin, thin));
+    rcpp_result_gen = Rcpp::wrap(island(isolates, beta_migration, gamma_mutation, gamma_recombination, X_mutation, X_recombination, samples, burnin, thin));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_islandR_log_lik", (DL_FUNC) &_islandR_log_lik, 3},
-    {"_islandR_island", (DL_FUNC) &_islandR_island, 7},
+    {"_islandR_island", (DL_FUNC) &_islandR_island, 9},
     {NULL, NULL, 0}
 };
 
