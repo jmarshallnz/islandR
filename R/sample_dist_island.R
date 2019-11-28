@@ -18,10 +18,18 @@ NULL
 #' @param burnin  the number of samples to discard for burnin. Defaults to 10.
 #' @param thin    the number of iterations per sample taken. Defaults to 100.
 #' @param priors - a list of priors for the fit. Defaults to 1,c(1,1),c(1,1).
+#' @param control - a list of model control information. Defaults to mutation="source", recombination="source". Specify "constant" for
+#'        a single probability across all sources.
 #' @param data optional data frame from which to take variables in \code{formula} and \code{sequence}.
 #' @return an object of class island which derives from sampling_dist.
 #' @seealso \code{\link{st_fit}}, \code{\link{print.sample_dist}}, \code{\link{plot.sample_dist}}, \code{\link{summary.sample_dist}}
-st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 100, burnin = 10, thin = 100, priors = list(migration=1,mutation=c(1,1),recombination=c(1,1)), data) {
+st_fit_island <- function(formula,
+                          sequences,
+                          non_primary = "Human",
+                          samples = 100, burnin = 10, thin = 100,
+                          priors = list(migration=1,mutation=c(1,1),recombination=c(1,1)),
+                          control = list(mutation='source', recombination='source'),
+                          data) {
   mod.terms = terms(formula, data=data)
   mod.frame = model.frame(formula, data=data)
   allele.frame = model.frame(sequences, data=data)
@@ -92,11 +100,22 @@ st_fit_island <- function(formula, sequences, non_primary = "Human", samples = 1
   # convert to a matrix
   island.mat = as.matrix(rbind(source.frame, type.frame))
 
+  # extract the mutation/recombination parameter matrices
+  num_sources = length(source_names)
+  X_mutation = diag(1, num_sources)
+  if (!is.null(control$mutation) && control$mutation == 'constant')
+    X_mutation = matrix(1, num_sources, 1)
+  X_recombination = diag(1, num_sources)
+  if (!is.null(control$recombination) && control$recombination == 'constant')
+    X_recombination = matrix(1, num_sources, 1)
+
   # run the island model
   out = island(island.mat,
                beta_migration = priors$migration,
                gamma_mutation = priors$mutation,
                gamma_recombination = priors$recombination,
+               X_mutation = X_mutation,
+               X_recombination = X_recombination,
                samples = samples,
                burnin = burnin,
                thin = thin)
