@@ -151,7 +151,7 @@ st_fit_island <- function(formula,
   x = list(types = type.frame$Type,
            sequences = sequences,
            sources = source_names,
-           sampling_distribution = simplify2array(hum_lik),
+           sampling_distribution = hum_lik,
            evolution_params = data.frame(out$evolution[-1,]),
            acceptance = data.frame(Type = move_types, out$accept),
            model = "island")
