@@ -1,5 +1,4 @@
 #include <Rcpp.h>
-#include "logdouble.h"
 
 using namespace Rcpp;
 
@@ -7,7 +6,7 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 double log_lik(NumericMatrix humans, List Phi, NumericVector p) {
-  logdouble lik;
+  double loglik = 0;
   // convert p to exp(p)
   NumericVector log_phi = Phi[0];
   NumericMatrix phi = Phi[1];
@@ -24,7 +23,8 @@ double log_lik(NumericMatrix humans, List Phi, NumericVector p) {
     for (int j = 0; j < P.size(); j++) {
       lik_h += phi(humans(h,0)-1, j) * P[j];
     }
-    lik *= logdouble(log_phi[humans(h,0)-1], lik_h) ^ humans(h,1);
+    double loglik_h = log_phi[humans(h,0)-1] + log(lik_h);
+    loglik += loglik_h * humans(h,1);
   }
-  return lik.log();
+  return loglik;
 }
