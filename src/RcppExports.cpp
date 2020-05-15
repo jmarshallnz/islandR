@@ -6,15 +6,15 @@
 using namespace Rcpp;
 
 // log_lik
-double log_lik(NumericMatrix humans, NumericMatrix phi, NumericVector p);
-RcppExport SEXP _islandR_log_lik(SEXP humansSEXP, SEXP phiSEXP, SEXP pSEXP) {
+double log_lik(NumericMatrix humans, List Phi, NumericVector p);
+RcppExport SEXP _islandR_log_lik(SEXP humansSEXP, SEXP PhiSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type humans(humansSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< List >::type Phi(PhiSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
-    rcpp_result_gen = Rcpp::wrap(log_lik(humans, phi, p));
+    rcpp_result_gen = Rcpp::wrap(log_lik(humans, Phi, p));
     return rcpp_result_gen;
 END_RCPP
 }

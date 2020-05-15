@@ -5,6 +5,10 @@ NULL
 # Log-likelihood function
 log_lik_R = function(humans, phi, p) {
   loglik = 0
+
+  # unlist phi
+  phi = phi[[1]]
+
   # run through human isolates
 
   for (h in seq_len(nrow(humans))) {
@@ -376,12 +380,21 @@ update_ranef = function(curr, humans, phi) {
   return(curr)
 }
 
-mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
+prep_genotype_dist <- function(phi) {
+  # for each row, factor out the largest exponent
+  max_exponent <- apply(phi, 1, max)
+  remainder <- exp(sweep(phi, 1, max_exponent, '-'))
+  list(max_exponent, remainder)
+}
+
+mcmc_no_ar1 = function(humans, X, genotype_dist, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
 
   if (is.null(priors)) {
     priors <- list()
     priors$theta <- list(mean = 0, prec = 0.1)
   }
+
+  phi <- prep_genotype_dist(genotype_dist)
 
   # accept/reject
   accept_reject = numeric(2)
@@ -390,10 +403,10 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   posterior = list()
 
   # parameter vector
-  n_sources = ncol(phi)
+  n_sources = ncol(genotype_dist)
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
-  colnames(theta) <- colnames(phi)[-n_sources]
+  colnames(theta) <- colnames(genotype_dist)[-n_sources]
 
   # initialise p
   p = matrix(0, nrow(X), n_sources-1)
@@ -429,7 +442,7 @@ mcmc_no_ar1 = function(humans, X, phi, iterations = 10000, burnin = 1000, thinni
   list(post = posterior, ar = c(curr$accept, curr$reject))
 }
 
-mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
+mcmc = function(humans, t, X, formula, genotype_dist, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
 
   if (is.null(priors)) {
     priors <- list()
@@ -437,6 +450,8 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
     priors$rho <- list(mean = 0, prec = 4)
     priors$theta <- list(mean = 0, prec = 0.1)
   }
+
+  phi = prep_genotype_dist(genotype_dist)
 
   # accept/reject
   accept_reject = numeric(2)
@@ -454,7 +469,7 @@ mcmc = function(humans, t, X, formula, phi, iterations = 10000, burnin = 1000, t
   }
 
   # parameter vector
-  n_sources = ncol(phi)
+  n_sources = ncol(genotype_dist)
   theta   = matrix(0, ncol(X), n_sources-1)
   rownames(theta) <- colnames(X)
 
