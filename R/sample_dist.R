@@ -83,6 +83,7 @@ as.data.frame.sample_dist <- function(x, ..., types = NULL) {
   data.frame(type=rep(x$types[which_types], by=iterations(x)*length(x$sources)),
              iteration = rep(seq_len(iterations(x)), each=length(x$sources)*length(which_types)),
              source = rep(rep(x$sources, each=length(which_types)), by=iterations(x)*length(which_types)),
-             log_p = p_types)
+             log_p = p_types,
+             stringsAsFactors = FALSE)
 }
 
