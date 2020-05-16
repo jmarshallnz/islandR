@@ -56,10 +56,10 @@ st_fit_dirichlet <- function(formula, prior = 1, non_primary = "Human", samples 
     a <- apply(x, 2, function(y) { rdirichlet(1, y) })
     rownames(a) <- rownames(x)
     colnames(a) <- colnames(x)
-    a
+    log(a)
   }
 
-  out <- replicate(samples, dirichlet_matrix(alpha))
+  out <- replicate(samples, dirichlet_matrix(alpha), simplify=FALSE)
   # righto, now construct a useful object...
   x = list(types = rownames(counts), sources = source_names,
            sampling_distribution = out, model = "dirichlet")

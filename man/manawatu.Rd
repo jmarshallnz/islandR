@@ -4,7 +4,8 @@
 \name{manawatu}
 \alias{manawatu}
 \title{Example human *Campylobacter jejuni* dataset from the Manawatu, New Zealand}
-\format{A data frame containing attribution information
+\format{
+A data frame containing attribution information
 \describe{
   \item{ST}{The sequence type identifier}
   \item{ASP}{The ASP housekeeping gene}
@@ -18,7 +19,8 @@
   \item{Year}{The year the sample was collected}
   \item{UR2006_num}{A numeric code containing the level of Rurality for each Human case}
   \item{UR2006_name}{The corresponding name of the numeric identifier `UR2006_num` for each Human case}
-}}
+}
+}
 \usage{
 manawatu
 }

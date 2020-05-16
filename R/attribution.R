@@ -73,7 +73,7 @@ attribution <- function(formula, sampling_dist, data, iterations=10000, burnin=1
   ar = c(0,0)
   for (i in seq_len(iterations(sampling_dist))) {
     cat("Performing iteration", i, "of", iterations(sampling_dist), "\n")
-    iter = mcmc_no_ar1(y, reduced.matrix, sampling_dist$sampling_distribution[,,i], iterations, burnin, thinning, priors)
+    iter = mcmc_no_ar1(y, reduced.matrix, sampling_dist$sampling_distribution[[i]], iterations, burnin, thinning, priors)
     post = c(post, iter$post)
     ar = ar + iter$ar
   }
@@ -187,7 +187,7 @@ attribution_ar1 <- function(formula, time, sampling_dist, data, iterations=10000
     iter = mcmc(y,
                 t=times,
                 X=reduced.matrix,
-                phi=sampling_dist$sampling_distribution[,,i],
+                phi=sampling_dist$sampling_distribution[[i]],
                 iterations=iterations,
                 burnin=burnin,
                 thinning=thinning,

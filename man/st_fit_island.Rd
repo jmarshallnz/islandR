@@ -4,10 +4,17 @@
 \alias{st_fit_island}
 \title{Fit the sampling distribution of genotypes to sources using the assymmetric island model.}
 \usage{
-st_fit_island(formula, sequences, non_primary = "Human", samples = 100,
-  burnin = 10, thin = 100, priors = list(migration = 1, mutation =
-  c(1, 1), recombination = c(1, 1)), control = list(mutation = "source",
-  recombination = "source"), data)
+st_fit_island(
+  formula,
+  sequences,
+  non_primary = "Human",
+  samples = 100,
+  burnin = 10,
+  thin = 100,
+  priors = list(migration = 1, mutation = c(1, 1), recombination = c(1, 1)),
+  control = list(mutation = "source", recombination = "source"),
+  data
+)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}

@@ -28,7 +28,7 @@ print.sample_dist <- function(x, ...) {
   cat("Model:      ", x$model, "\n")
   cat("Genotypes:  ", length(x$types), "\n")
   cat("Sources:    ", length(x$sources), "\n")
-  cat("Iterations: ", dim(x$sampling_distribution)[3], "\n")
+  cat("Iterations: ", length(x$sampling_distribution), "\n")
 }
 
 #' Generic for retrieving the number of iterations from an object
@@ -44,7 +44,7 @@ iterations <- function(x) {
 #' @param x sample_dist object
 #' @return the number of iterations
 iterations.sample_dist <- function(x) {
-  dim(x$sampling_distribution)[3]
+  length(x$sampling_distribution)
 }
 
 #' Print a summary for a sample_dist object
@@ -54,10 +54,8 @@ iterations.sample_dist <- function(x) {
 #' @return posterior means of the ST distribution on each source
 summary.sample_dist <- function(object, ...) {
   # compute posterior mean, assuming apriori all sources equally likely
-  post_mean = apply(object$sampling_distribution, 1:2, mean)
-  post_mean = post_mean / rowSums(post_mean)
-  print(round(post_mean,2))
-  invisible(post_mean)
+  # TODO FIXME!
+  print("Not currently implemented")
 }
 
 #' Produce a summary plot (stacked barplot) of posterior means
@@ -66,7 +64,25 @@ summary.sample_dist <- function(object, ...) {
 #' @param ... further parameters supplied to plot
 plot.sample_dist <- function(x, ...) {
   # compute posterior mean and plot that maybe?
-  post_mean = apply(x$sampling_distribution, 1:2, mean)
-  post_mean = post_mean / rowSums(post_mean)
-  barplot(t(post_mean), beside=FALSE)
+  # TODO: FIXME!
+  print("Not currently implemented")
 }
+
+#' Convert sampling distribution to a data frame
+#' @export
+#' @param x sample_dist object to convert
+#' @param ... further parameters supplied to as.data.frame
+#' @param types the sequence types to extract. Defaults to NULL (all types)
+#' @return a data.frame with columns type, iteration, source and log_p
+as.data.frame.sample_dist <- function(x, ..., types = NULL) {
+  which_types <- seq_along(x$types)
+  if (!is.null(types)) {
+    which_types <- na.omit(match(types, x$types))
+  }
+  p_types <- unlist(lapply(x$sampling_distribution, function(x) { x[which_types,] }))
+  data.frame(type=rep(x$types[which_types], by=iterations(x)*length(x$sources)),
+             iteration = rep(seq_len(iterations(x)), each=length(x$sources)*length(which_types)),
+             source = rep(rep(x$sources, each=length(which_types)), by=iterations(x)*length(which_types)),
+             log_p = p_types)
+}
+
