@@ -67,3 +67,22 @@ plot.sample_dist <- function(x, ...) {
   # TODO: FIXME!
   print("Not currently implemented")
 }
+
+#' Convert sampling distribution to a data frame
+#' @export
+#' @param x sample_dist object to convert
+#' @param ... further parameters supplied to as.data.frame
+#' @param types the sequence types to extract. Defaults to NULL (all types)
+#' @return a data.frame with columns type, iteration, source and log_p
+as.data.frame.sample_dist <- function(x, ..., types = NULL) {
+  which_types <- seq_along(x$types)
+  if (!is.null(types)) {
+    which_types <- na.omit(match(types, x$types))
+  }
+  p_types <- unlist(lapply(x$sampling_distribution, function(x) { x[which_types,] }))
+  data.frame(type=rep(x$types[which_types], by=iterations(x)*length(x$sources)),
+             iteration = rep(seq_len(iterations(x)), each=length(x$sources)*length(which_types)),
+             source = rep(rep(x$sources, each=length(which_types)), by=iterations(x)*length(which_types)),
+             log_p = p_types)
+}
+
