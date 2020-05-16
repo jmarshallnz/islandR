@@ -4,8 +4,13 @@
 \alias{st_fit}
 \title{Fit the sampling distribution of genotypes to sources using different models.}
 \usage{
-st_fit(formula, non_primary = "Human", method = c("island",
-  "dirichlet"), data, ...)
+st_fit(
+  formula,
+  non_primary = "Human",
+  method = c("island", "dirichlet"),
+  data,
+  ...
+)
 }
 \arguments{
 \item{formula}{A formula of the form Source ~ Genotype}

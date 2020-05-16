@@ -4,8 +4,16 @@
 \alias{attribution_ar1}
 \title{Attribute cases to sources via MCMC with an AR(1) model on time}
 \usage{
-attribution_ar1(formula, time, sampling_dist, data, iterations = 10000,
-  burnin = 1000, thinning = 100, priors = NULL)
+attribution_ar1(
+  formula,
+  time,
+  sampling_dist,
+  data,
+  iterations = 10000,
+  burnin = 1000,
+  thinning = 100,
+  priors = NULL
+)
 }
 \arguments{
 \item{formula}{A formula of the form `GenoType ~ Covariates` for cases}
