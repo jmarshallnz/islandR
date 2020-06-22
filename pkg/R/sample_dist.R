@@ -58,13 +58,16 @@ iterations.sample_dist <- function(x) {
 
 #' Print a summary for a sample_dist object
 #' @export
-#' @param object sample_dist object to summarise
+#' @param x sample_dist object to summarise
 #' @param ... further parameters supplied to summary
 #' @return posterior means of the ST distribution on each source
-summary.sample_dist <- function(object, ...) {
+summary.sample_dist <- function(x, ...) {
   # compute posterior mean, assuming apriori all sources equally likely
-  # TODO FIXME!
-  print("Not currently implemented")
+  post_mean <- Reduce('+', x$sampling_distribution)/length(x$sampling_distribution)
+  post_mean <- prep_genotype_dist(post_mean)[[2]]
+  post_mean <- post_mean / rowSums(post_mean)
+  print(post_mean)
+  invisible(post_mean)
 }
 
 #' Produce a summary plot (stacked barplot) of posterior means
@@ -73,8 +76,8 @@ summary.sample_dist <- function(object, ...) {
 #' @param ... further parameters supplied to plot
 plot.sample_dist <- function(x, ...) {
   # compute posterior mean and plot that maybe?
-  # TODO: FIXME!
-  print("Not currently implemented")
+  summ <- summary(x)
+  barplot(t(summ), beside=FALSE)
 }
 
 #' Convert sampling distribution to a data frame
