@@ -1,4 +1,5 @@
 #' @importFrom graphics barplot
+#' @importFrom stats na.omit
 NULL
 
 #' Fit the sampling distribution of genotypes to sources using different models.
