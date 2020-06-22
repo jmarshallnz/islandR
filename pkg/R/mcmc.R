@@ -380,13 +380,6 @@ update_ranef = function(curr, humans, phi) {
   return(curr)
 }
 
-prep_genotype_dist <- function(phi) {
-  # for each row, factor out the largest exponent
-  max_exponent <- apply(phi, 1, max)
-  remainder <- exp(sweep(phi, 1, max_exponent, '-'))
-  list(max_exponent, remainder)
-}
-
 mcmc_no_ar1 = function(humans, X, genotype_dist, iterations = 10000, burnin = 1000, thinning = 100, priors = NULL) {
 
   if (is.null(priors)) {

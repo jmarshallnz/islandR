@@ -2,6 +2,14 @@
 #' @importFrom stats na.omit
 NULL
 
+
+prep_genotype_dist <- function(phi) {
+  # for each row, factor out the largest exponent
+  max_exponent <- apply(phi, 1, max)
+  remainder <- exp(sweep(phi, 1, max_exponent, '-'))
+  list(max_exponent, remainder)
+}
+
 #' Fit the sampling distribution of genotypes to sources using different models.
 #' @export
 #' @param formula A formula of the form Source ~ Genotype
