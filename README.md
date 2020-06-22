@@ -18,8 +18,8 @@ likely prevalence of unobserved genotypes.
 islandR is not currently available from CRAN, but you can install it from github with:
 
 ```R
-# install.packages("devtools")
-devtools::install_github("jmarshallnz/islandR")
+# install.packages("remotes")
+remotes::install_github("jmarshallnz/islandR", subdir="pkg")
 ```
 
 ## Usage
