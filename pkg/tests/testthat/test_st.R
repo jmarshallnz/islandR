@@ -11,8 +11,10 @@ test_that("st_fit gives correct types", {
   expect_equal(length(st$types), nrow(st$sequences))
   expect_equal(ncol(st$sequences), 7)
 
-  expect_equal(length(dim(st$sampling_distribution)), 3)
-  expect_equal(st$sources, dimnames(st$sampling_distribution)[[2]])
+  expect_equal(class(st$sampling_distribution), "list")
+  expect_equal(length(st$sampling_distribution), 100)
+  expect_equal(dim(st$sampling_distribution[[1]]), c(348, 4))
+  expect_equal(st$sources, dimnames(st$sampling_distribution[[1]])[[2]])
 })
 
 test_that("st_fit plots correctly", {
