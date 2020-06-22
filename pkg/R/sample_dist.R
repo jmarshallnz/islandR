@@ -58,12 +58,12 @@ iterations.sample_dist <- function(x) {
 
 #' Print a summary for a sample_dist object
 #' @export
-#' @param x sample_dist object to summarise
+#' @param object sample_dist object to summarise
 #' @param ... further parameters supplied to summary
 #' @return posterior means of the ST distribution on each source
-summary.sample_dist <- function(x, ...) {
+summary.sample_dist <- function(object, ...) {
   # compute posterior mean, assuming apriori all sources equally likely
-  post_mean <- Reduce('+', x$sampling_distribution)/length(x$sampling_distribution)
+  post_mean <- Reduce('+', object$sampling_distribution)/length(object$sampling_distribution)
   post_mean <- prep_genotype_dist(post_mean)[[2]]
   post_mean <- post_mean / rowSums(post_mean)
   print(post_mean)

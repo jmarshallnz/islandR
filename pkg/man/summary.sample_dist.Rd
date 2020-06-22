@@ -4,10 +4,10 @@
 \alias{summary.sample_dist}
 \title{Print a summary for a sample_dist object}
 \usage{
-\method{summary}{sample_dist}(x, ...)
+\method{summary}{sample_dist}(object, ...)
 }
 \arguments{
-\item{x}{sample_dist object to summarise}
+\item{object}{sample_dist object to summarise}
 
 \item{...}{further parameters supplied to summary}
 }
