@@ -42,7 +42,7 @@ st_fit_dirichlet <- function(formula, prior = 1, non_primary = "Human", samples 
   type = labels(mod.terms)
 
   # We basically just need a matrix of unique types by their counts
-  counts = table(data[,type], data[,response])
+  counts = table(data[,type,drop=TRUE], data[,response,drop=TRUE])
 
   # then we just need to pick out the source columns
   source_names = colnames(counts)[!colnames(counts) %in% non_primary]
