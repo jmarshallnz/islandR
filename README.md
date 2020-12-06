@@ -1,4 +1,8 @@
-[![Build Status](https://travis-ci.org/jmarshallnz/islandR.svg?branch=master)](https://travis-ci.org/jmarshallnz/islandR) [![Coverage Status](https://img.shields.io/codecov/c/github/jmarshallnz/islandR/master.svg)](https://codecov.io/github/jmarshallnz/islandR?branch=master)
+<!-- badges: start -->
+[![R build status](https://github.com/jmarshallnz/islandR/workflows/R-CMD-check/badge.svg)](https://github.com/jmarshallnz/islandR/actions)
+[![Coverage Status](https://img.shields.io/codecov/c/github/jmarshallnz/islandR/master.svg)](https://codecov.io/github/jmarshallnz/islandR?branch=master)
+<!-- badges: end -->
+[![Build Status](https://travis-ci.org/jmarshallnz/islandR.svg?branch=master)](https://travis-ci.org/jmarshallnz/islandR) 
 
 # islandR
 
