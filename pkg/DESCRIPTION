@@ -19,4 +19,5 @@ Imports:
 URL: http://github.com/jmarshallnz/islandR
 RoxygenNote: 7.1.0
 Suggests:
-    testthat
+    testthat,
+    covr
