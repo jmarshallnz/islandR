@@ -1,8 +1,8 @@
 Package: islandR
 Type: Package
 Title: Estimates Source Attribution Probabilities
-Version: 0.3
-Date: 2020-05-16
+Version: 0.4
+Date: 2024-11-28
 Authors@R: c(person("Jonathan", "Marshall", email = "J.C.Marshall@massey.ac.nz", role = c("aut", "cre")),
              person("Daniel", "Wilson", email = "daniel.wilson@ndm.ox.ac.uk", role = "aut"))
 Description: Estimates source attribution probabilities using genotype data in
@@ -12,12 +12,13 @@ Depends:
     R(>= 2.10)
 LazyData: TRUE
 LinkingTo: Rcpp
+Encoding: UTF-8
 Imports:
     Rcpp,
     reshape2,
     MASS
 URL: http://github.com/jmarshallnz/islandR
-RoxygenNote: 7.1.0
+RoxygenNote: 7.3.1
 Suggests:
     testthat,
     covr
